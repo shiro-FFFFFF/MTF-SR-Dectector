@@ -1,1 +1,22 @@
-{"version":"2.0.0","tasks":[{"label":"build","command":"dotnet","type":"process","args":["build","${workspaceFolder}","/property:GenerateFullPaths=true","/consoleLoggerParameters:NoSummary"],"problemMatcher":"$msCompile"}]}
+{"version":"2.0.0","tasks":[
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}",
+                "/property:GenerateFullPaths=true",
+                "/consoleLoggerParameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "type": "dotnet",
+            "task": "build C:\\Users\\user\\Documents\\cAlgo\\Sources\\Indicators\\MTF SR Dectector\\MTF SR Dectector\\MTF SR Dectector.csproj",
+            "file": "C:\\Users\\user\\Documents\\cAlgo\\Sources\\Indicators\\MTF SR Dectector\\MTF SR Dectector\\MTF SR Dectector.csproj",
+            "group": "build",
+            "problemMatcher": [],
+            "label": "dotnet: build C:\\Users\\user\\Documents\\cAlgo\\Sources\\Indicators\\MTF SR Dectector\\MTF SR Dectector\\MTF SR Dectector.csproj"
+        }
+    ]}

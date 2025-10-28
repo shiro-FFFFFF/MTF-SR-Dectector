@@ -22,6 +22,10 @@ public class SR
     public List<DateTime> TimeBo { get; set; } = new List<DateTime>();
     public List<DateTime> TimeRejUp { get; set; } = new List<DateTime>();
     public List<DateTime> TimeRejLo { get; set; } = new List<DateTime>();
+    public int FirstTouchingH4IndexForS { get; set; } = -1;
+    public int FirstTouchingH4IndexForR { get; set; } = -1;
+    public int FirstTouchingH1IndexForS { get; set; } = -1;
+    public int FirstTouchingH1IndexForR { get; set; } = -1;
 
     public SR() { }
 
@@ -125,7 +129,11 @@ public class SR
             IndexRejLo = new List<int>(this.IndexRejLo),
             TimeBo = new List<DateTime>(this.TimeBo),
             TimeRejUp = new List<DateTime>(this.TimeRejUp),
-            TimeRejLo = new List<DateTime>(this.TimeRejLo)
+            TimeRejLo = new List<DateTime>(this.TimeRejLo),
+            FirstTouchingH4IndexForS = this.FirstTouchingH4IndexForS,
+            FirstTouchingH4IndexForR = this.FirstTouchingH4IndexForR,
+            FirstTouchingH1IndexForS = this.FirstTouchingH1IndexForS,
+            FirstTouchingH1IndexForR = this.FirstTouchingH1IndexForR
         };
         if (index != currBarIndex)
         {
@@ -144,19 +152,31 @@ public class SR
                 {
                     isReverted = true;
                     int pos = x.IndexBo.IndexOf(i);
-                    if (pos != -1) x.IndexBo.RemoveAt(pos);
+                    if (pos != -1)
+                    {
+                        x.IndexBo.RemoveAt(pos);
+                        x.TimeBo.RemoveAt(pos);
+                    }
                 }
                 if (this.IndexRejUp.IndexOf(i) != -1)
                 {
                     isReverted = true;
                     int pos = x.IndexRejUp.IndexOf(i);
-                    if (pos != -1) x.IndexRejUp.RemoveAt(pos);
+                    if (pos != -1)
+                    {
+                        x.IndexRejUp.RemoveAt(pos);
+                        x.TimeRejUp.RemoveAt(pos);
+                    }
                 }
                 if (this.IndexRejLo.IndexOf(i) != -1)
                 {
                     isReverted = true;
                     int pos = x.IndexRejLo.IndexOf(i);
-                    if (pos != -1) x.IndexRejLo.RemoveAt(pos);
+                    if (pos != -1)
+                    {
+                        x.IndexRejLo.RemoveAt(pos);
+                        x.TimeRejLo.RemoveAt(pos);
+                    }
                 }
                 // TimeBo, TimeRejUp, TimeRejLo are now DateTime, but i is int (bar index), so this logic needs to change
                 // Since TimeBo etc. are now DateTime, we can't use IndexOf with int i
@@ -174,9 +194,9 @@ public class SR
             }
             if (isReverted)
             {
-                int a = x.IndexBo.Count > 0 ? x.IndexBo[x.IndexBo.Count - 1] : 0;
-                int b = x.IndexRejUp.Count > 0 ? x.IndexRejUp[x.IndexRejUp.Count - 1] : 0;
-                int c = x.IndexRejLo.Count > 0 ? x.IndexRejLo[x.IndexRejLo.Count - 1] : 0;
+                int a = x.IndexBo.Count > 0 ? x.IndexBo[^1] : 0;
+                int b = x.IndexRejUp.Count > 0 ? x.IndexRejUp[^1] : 0;
+                int c = x.IndexRejLo.Count > 0 ? x.IndexRejLo[^1] : 0;
                 int indexLastAction = Math.Max(a, Math.Max(b, c));
                 x.IsFresh = x.IndexBo.Contains(indexLastAction);
             }
@@ -224,8 +244,13 @@ namespace cAlgo
         private Dictionary<int, SR> h4SRs = new Dictionary<int, SR>();
         private Bars dailyBars;
         private Bars h4Bars;
+        private Bars h1Bars;
         private int lastDailyIndex = -1;
         private int lastH4Index = -1;
+        private int dailyBarsCount = -1;
+        private int h4BarsCount = -1;
+        private int h1BarsCount = -1;
+
 
         protected override void Initialize()
         {
@@ -233,10 +258,18 @@ namespace cAlgo
             // https://help.ctrader.com/ctrader-algo/
 
             Print(Message);
-
+            Print(Chart.TimeFrame.ToString());
             dailyBars = MarketData.GetBars(TimeFrame.Daily);
+            dailyBarsCount = dailyBars.Count;
             h4Bars = MarketData.GetBars(TimeFrame.Hour4);
-            Print("\nLast Daily bar index: " + dailyBars.Count.ToString() + " @" + dailyBars[dailyBars.Count - 1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nLast H4 bar index: " + h4Bars.Count.ToString() + " @" + h4Bars[h4Bars.Count - 1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            h4BarsCount = h4Bars.Count;
+            h1Bars = MarketData.GetBars(TimeFrame.Hour);
+            h1BarsCount = h1Bars.Count;
+            while(h4Bars.LastBar != h4Bars[^1])
+            {
+                Print(h4Bars.LastBar);
+            }
+            Print("\nLast Daily bar index: " + dailyBars.Count.ToString() + " @" + dailyBars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nLast H4 bar index: " + h4Bars.Count.ToString() + " @" + h4Bars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
             Print("\nD bar[1405]: " + dailyBars[1405].Close + " @" + dailyBars[1405].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nD bar[1411]: " + dailyBars[1411].Close + " @" + dailyBars[1411].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1154]: " + h4Bars[1154].Close + " @" + h4Bars[1154].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1139]: " + h4Bars[1139].Close + " @" + h4Bars[1139].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
 
             // Initialize SR dictionaries
@@ -246,6 +279,27 @@ namespace cAlgo
 
         public override void Calculate(int index)
         {
+            // Print(dailyBarsCount + "\t" + h4BarsCount + "\t" + h1BarsCount);
+            int checkIndex = -1;
+            switch (Chart.TimeFrame.ToString())
+            {
+                case "Daily":
+                    checkIndex = dailyBarsCount - 1;
+                    break;
+                case "Hour4":
+                    checkIndex = h4BarsCount - 1;
+                    break;
+                case "Hour":
+                    checkIndex = h1BarsCount - 1;
+                    break;
+            }
+            // Print(checkIndex);
+            if (checkIndex > index)
+            {
+                // Print("checkIndex=" + checkIndex.ToString() + " == " + "index=" + index.ToString() + ": " + (checkIndex > index).ToString());
+                return;
+            }
+            
             // Process Daily timeframe
             if (dailyBars != null && dailyBars.Count > 0)
             {
@@ -259,6 +313,7 @@ namespace cAlgo
                     for (int i = lastDailyIndex + 1; i <= dailyIndex; i++)
                     {
                         ProcessSR(dailySRs, dailyBars, i, TimeFrame.Daily);
+                        Print("D Index = " + i);
                     }
                     lastDailyIndex = dailyIndex;
                 }
@@ -277,14 +332,23 @@ namespace cAlgo
                     for (int i = lastH4Index + 1; i <= h4Index; i++)
                     {
                         ProcessSR(h4SRs, h4Bars, i, TimeFrame.Hour4);
+                        Print("H4 Index = " + i);
                     }
                     lastH4Index = h4Index;
                 }
             }
-
+            Print("\nh4Bars: \n" + h4Bars[1156].ToString());
             // Run layer logic for Daily and H4
-            var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1, false);
-            var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1, false);
+            var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1);
+            var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1);
+            Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
+            Print("\nh4MainIndex: " + h4MainIndex.ToString());
+
+            // Run D-H4 Layer 2
+            RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars);
+
+            // Run H4-H1 Layer 2
+            RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars);
 
             // Log selected SR levels
             if (dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
@@ -318,26 +382,197 @@ namespace cAlgo
         {
             return (open > level && close < level) || (open < level && close > level);
         }
-        public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex, bool isLast)
+
+        private void RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars)
+        {
+            if (mainIndex < 0 || mainIndex >= htfBars.Count) return;
+
+            var htfBar = htfBars[mainIndex];
+            DateTime startTime = htfBar.OpenTime;
+            DateTime endTime = (mainIndex + 1 < htfBars.Count) ? htfBars[mainIndex + 1].OpenTime : DateTime.MaxValue;
+
+            Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
+            if (ls != null) Print(htf + "_ls price: " + ls.Price);
+            if (hr != null) Print(htf + "_hr price: " + hr.Price);
+
+            int firstLTFForS = -1;
+            int firstLTFForR = -1;
+
+            for (int i = 0; i < ltfBars.Count; i++)
+            {
+                var ltfBar = ltfBars[i];
+                if (ltfBar.OpenTime >= startTime && ltfBar.OpenTime < endTime)
+                {
+                    Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
+                    // Check for ls (support) - downward wick touch
+                    bool touchS = ls != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, ls.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, ls.Price));
+                    Print("Touch S: " + touchS);
+                    if (touchS && firstLTFForS == -1)
+                    {
+                        firstLTFForS = i;
+                        if(htf == "D") ls.FirstTouchingH4IndexForS = i;
+                        if(htf == "H4") ls.FirstTouchingH1IndexForS = i;
+                        Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
+                    }
+                    // Check for hr (resistance) - upward wick touch
+                    bool touchR = hr != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, hr.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, hr.Price));
+                    Print("Touch R: " + touchR);
+                    if (touchR && firstLTFForR == -1)
+                    {
+                        firstLTFForR = i;
+                        if(htf == "D") hr.FirstTouchingH4IndexForR = i;
+                        if(htf == "H4") hr.FirstTouchingH1IndexForR = i;
+                        Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
+                    }
+                    // Since we expect up to 6 H4 or 4 H1 candles, we can break early if both are found
+                    if (firstLTFForS != -1 && firstLTFForR != -1) break;
+                }
+            }
+
+            // Print the first touching indices
+            if (firstLTFForS != -1)
+            {
+                Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
+            }
+            if (firstLTFForR != -1)
+            {
+                Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
+            }
+        }
+
+        private void RunLayer2_D_H4(SR d_hr, SR d_ls, int dailyMainIndex, Bars dailyBars, Bars h4Bars)
+        {
+            if (dailyMainIndex < 0 || dailyMainIndex >= dailyBars.Count) return;
+
+            var dailyBar = dailyBars[dailyMainIndex];
+            DateTime startTime = dailyBar.OpenTime;
+            DateTime endTime = (dailyMainIndex + 1 < dailyBars.Count) ? dailyBars[dailyMainIndex + 1].OpenTime : DateTime.MaxValue;
+
+            Print("Layer2 D-H4: dailyMainIndex=" + dailyMainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            Print("Daily bar: O=" + dailyBar.Open + ", H=" + dailyBar.High + ", L=" + dailyBar.Low + ", C=" + dailyBar.Close);
+            if (d_ls != null) Print("d_ls price: " + d_ls.Price);
+            if (d_hr != null) Print("d_hr price: " + d_hr.Price);
+
+            int firstH4ForS = -1;
+            int firstH4ForR = -1;
+
+            for (int i = 0; i < h4Bars.Count; i++)
+            {
+                var h4Bar = h4Bars[i];
+                if (h4Bar.OpenTime >= startTime && h4Bar.OpenTime < endTime)
+                {
+                    Print("Checking H4 bar " + i + " at " + h4Bar.OpenTime + ": O=" + h4Bar.Open + ", H=" + h4Bar.High + ", L=" + h4Bar.Low + ", C=" + h4Bar.Close);
+                    // Check for d_ls (support) - downward wick touch
+                    bool touchS = d_ls != null && (IsWickTouched(h4Bar.Open, h4Bar.High, h4Bar.Low, h4Bar.Close, d_ls.Price) || IsBodyTouched(h4Bar.Open, h4Bar.Close, d_hr.Price));
+                    Print("Touch S: " + touchS);
+                    if (touchS && firstH4ForS == -1)
+                    {
+                        firstH4ForS = i;
+                        d_ls.FirstTouchingH4IndexForS = i;
+                        Print(">>>>>>>>>> First touch S found at H4 " + i);
+                    }
+                    // Check for d_hr (resistance) - upward wick touch
+                    bool touchR = d_hr != null && (IsWickTouched(h4Bar.Open, h4Bar.High, h4Bar.Low, h4Bar.Close, d_hr.Price) || IsBodyTouched(h4Bar.Open, h4Bar.Close, d_hr.Price));
+                    Print("Touch R: " + touchR);
+                    if (touchR && firstH4ForR == -1)
+                    {
+                        firstH4ForR = i;
+                        d_hr.FirstTouchingH4IndexForR = i;
+                        Print(">>>>>>>>>> First touch R found at H4 " + i);
+                    }
+                    // Since we expect up to 6 H4 candles, we can break early if both are found
+                    if (firstH4ForS != -1 && firstH4ForR != -1) break;
+                }
+            }
+
+            // Print the first touching indices
+            if (firstH4ForS != -1)
+            {
+                Print("first h4 bar for d_s: " + firstH4ForS);
+            }
+            if (firstH4ForR != -1)
+            {
+                Print("first h4 bar for d_r: " + firstH4ForR);
+            }
+        }
+
+        private void RunLayer2_H4_H1(SR h4_hr, SR h4_ls, int h4MainIndex, Bars h4Bars, Bars h1Bars)
+        {
+            if (h4MainIndex < 0 || h4MainIndex >= h4Bars.Count) return;
+
+            var h4Bar = h4Bars[h4MainIndex];
+            DateTime startTime = h4Bar.OpenTime;
+            DateTime endTime = (h4MainIndex + 1 < h4Bars.Count) ? h4Bars[h4MainIndex + 1].OpenTime : DateTime.MaxValue;
+
+            Print("Layer2 H4-H1: h4MainIndex=" + h4MainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            Print("H4 bar: O=" + h4Bar.Open + ", H=" + h4Bar.High + ", L=" + h4Bar.Low + ", C=" + h4Bar.Close);
+            if (h4_ls != null) Print("h4_ls price: " + h4_ls.Price);
+            if (h4_hr != null) Print("h4_hr price: " + h4_hr.Price);
+
+            int firstH1ForS = -1;
+            int firstH1ForR = -1;
+
+            for (int i = 0; i < h1Bars.Count; i++)
+            {
+                var h1Bar = h1Bars[i];
+                if (h1Bar.OpenTime >= startTime && h1Bar.OpenTime < endTime)
+                {
+                    Print("Checking H1 bar " + i + " at " + h1Bar.OpenTime + ": O=" + h1Bar.Open + ", H=" + h1Bar.High + ", L=" + h1Bar.Low + ", C=" + h1Bar.Close);
+                    // Check for h4_ls (support) - downward wick touch
+                    bool touchS = h4_ls != null && (IsWickTouched(h1Bar.Open, h1Bar.High, h1Bar.Low, h1Bar.Close, h4_ls.Price) || IsBodyTouched(h1Bar.Open, h1Bar.Close, h4_ls.Price));
+                    Print("Touch S: " + touchS);
+                    if (touchS && firstH1ForS == -1)
+                    {
+                        firstH1ForS = i;
+                        h4_ls.FirstTouchingH1IndexForS = i;
+                        Print(">>>>>>>>>> First touch S found at H1 " + i);
+                    }
+                    // Check for h4_hr (resistance) - upward wick touch
+                    bool touchR = h4_hr != null && (IsWickTouched(h1Bar.Open, h1Bar.High, h1Bar.Low, h1Bar.Close, h4_hr.Price) || IsBodyTouched(h1Bar.Open, h1Bar.Close, h4_hr.Price));
+                    Print("Touch R: " + touchR);
+                    if (touchR && firstH1ForR == -1)
+                    {
+                        firstH1ForR = i;
+                        h4_hr.FirstTouchingH1IndexForR = i;
+                        Print(">>>>>>>>>> First touch R found at H1 " + i);
+                    }
+                    // Since we expect up to 4 H1 candles, we can break early if both are found
+                    if (firstH1ForS != -1 && firstH1ForR != -1) break;
+                }
+            }
+
+            // Print the first touching indices
+            if (firstH1ForS != -1)
+            {
+                Print("first h1 bar for h4_s: " + firstH1ForS);
+            }
+            if (firstH1ForR != -1)
+            {
+                Print("first h1 bar for h4_r: " + firstH1ForR);
+            }
+        }
+
+        public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex)
         {
             SR hr = null;
             SR ls = null;
             int mainIndex = 0;
-            if (isLast)
-            {
-                return (hr, ls, mainIndex);
-            }
+            // if (isLast)
+            // {
+            //     return (hr, ls, mainIndex);
+            // }
             // Find mainIndex from confirmed bars only (avoid unclosed current bar)
             foreach (var sr in srs.Values)
             {
                 int lastIndex = 0;
                 if (sr.IsSupport && sr.IndexRejLo.Count > 0)
                 {
-                    lastIndex = sr.IndexRejLo[sr.IndexRejLo.Count - 1];
+                    lastIndex = sr.IndexRejLo[^1];
                 }
                 else if (sr.IsResistance && sr.IndexRejUp.Count > 0)
                 {
-                    lastIndex = sr.IndexRejUp[sr.IndexRejUp.Count - 1];
+                    lastIndex = sr.IndexRejUp[^1];
                 }
                 if (lastIndex > mainIndex && lastIndex < barIndex)
                 {
