@@ -1,0 +1,1 @@
+This indicator is designed for Multi-Timeframe Support and Resistance (MTF SR) analysis and detection.

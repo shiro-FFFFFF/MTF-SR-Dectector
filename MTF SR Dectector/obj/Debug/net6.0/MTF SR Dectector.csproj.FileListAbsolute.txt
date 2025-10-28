@@ -1,0 +1,12 @@
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\bin\Debug\net6.0\MTF SR Dectector.deps.json
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\bin\Debug\net6.0\MTF SR Dectector.dll
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\bin\Debug\net6.0\MTF SR Dectector.pdb
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.csproj.AssemblyReference.cache
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.AssemblyInfoInputs.cache
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.AssemblyInfo.cs
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.csproj.CoreCompileInputs.cache
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.dll
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\refint\MTF SR Dectector.dll
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.pdb
+c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\ref\MTF SR Dectector.dll
