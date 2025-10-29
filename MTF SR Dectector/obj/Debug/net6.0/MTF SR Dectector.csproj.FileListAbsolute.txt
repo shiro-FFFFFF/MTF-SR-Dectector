@@ -10,3 +10,4 @@ c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectect
 c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\refint\MTF SR Dectector.dll
 c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.pdb
 c:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\ref\MTF SR Dectector.dll
+C:\Users\user\Documents\cAlgo\Sources\Indicators\MTF SR Dectector\MTF SR Dectector\obj\Debug\net6.0\MTF SR Dectector.sourcelink.json

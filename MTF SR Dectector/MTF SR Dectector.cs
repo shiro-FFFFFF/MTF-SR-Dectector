@@ -22,10 +22,10 @@ public class SR
     public List<DateTime> TimeBo { get; set; } = new List<DateTime>();
     public List<DateTime> TimeRejUp { get; set; } = new List<DateTime>();
     public List<DateTime> TimeRejLo { get; set; } = new List<DateTime>();
-    public int FirstTouchingH4IndexForS { get; set; } = -1;
-    public int FirstTouchingH4IndexForR { get; set; } = -1;
-    public int FirstTouchingH1IndexForS { get; set; } = -1;
-    public int FirstTouchingH1IndexForR { get; set; } = -1;
+    public int IndexFirstTouchH4S { get; set; } = -1;
+    public int IndexFirstTouchH4R { get; set; } = -1;
+    public int IndexFirstTouchH1S { get; set; } = -1;
+    public int IndexFirstTouchH1R { get; set; } = -1;
 
     public SR() { }
 
@@ -130,10 +130,10 @@ public class SR
             TimeBo = new List<DateTime>(this.TimeBo),
             TimeRejUp = new List<DateTime>(this.TimeRejUp),
             TimeRejLo = new List<DateTime>(this.TimeRejLo),
-            FirstTouchingH4IndexForS = this.FirstTouchingH4IndexForS,
-            FirstTouchingH4IndexForR = this.FirstTouchingH4IndexForR,
-            FirstTouchingH1IndexForS = this.FirstTouchingH1IndexForS,
-            FirstTouchingH1IndexForR = this.FirstTouchingH1IndexForR
+            IndexFirstTouchH4S = this.IndexFirstTouchH4S,
+            IndexFirstTouchH4R = this.IndexFirstTouchH4R,
+            IndexFirstTouchH1S = this.IndexFirstTouchH1S,
+            IndexFirstTouchH1R = this.IndexFirstTouchH1R
         };
         if (index != currBarIndex)
         {
@@ -300,6 +300,7 @@ namespace cAlgo
                 return;
             }
             
+            bool isNew = false;
             // Process Daily timeframe
             if (dailyBars != null && dailyBars.Count > 0)
             {
@@ -316,6 +317,7 @@ namespace cAlgo
                         Print("D Index = " + i);
                     }
                     lastDailyIndex = dailyIndex;
+                    isNew = true;
                 }
             }
 
@@ -335,26 +337,27 @@ namespace cAlgo
                         Print("H4 Index = " + i);
                     }
                     lastH4Index = h4Index;
+                    isNew = true;
                 }
             }
-            Print("\nh4Bars: \n" + h4Bars[1156].ToString());
+
             // Run layer logic for Daily and H4
             var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1);
             var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1);
-            Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
-            Print("\nh4MainIndex: " + h4MainIndex.ToString());
+            if (isNew) Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
+            if (isNew) Print("\nh4MainIndex: " + h4MainIndex.ToString());
 
             // Run D-H4 Layer 2
-            RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars);
+            RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars, isNew);
 
             // Run H4-H1 Layer 2
-            RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars);
+            RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars, isNew);
 
             // Log selected SR levels
-            if (dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
-            if (dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
-            if (h4HR != null) Print("H4 HR: " + h4HR.ToString());
-            if (h4LS != null) Print("H4 LS: " + h4LS.ToString());
+            if (isNew && dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
+            if (isNew && dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
+            if (isNew && h4HR != null) Print("H4 HR: " + h4HR.ToString());
+            if (isNew && h4LS != null) Print("H4 LS: " + h4LS.ToString());
 
             // Draw levels for Daily and H4
             DrawSRLevels(dailyHR, dailyLS, "D", DailySupportColor, DailyResistanceColor, index, dailyMainIndex, TimeFrame.Daily);
@@ -383,18 +386,19 @@ namespace cAlgo
             return (open > level && close < level) || (open < level && close > level);
         }
 
-        private void RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars)
+        private void RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars, bool isNew)
         {
+            // step 1: get ltf main bar
             if (mainIndex < 0 || mainIndex >= htfBars.Count) return;
 
             var htfBar = htfBars[mainIndex];
             DateTime startTime = htfBar.OpenTime;
             DateTime endTime = (mainIndex + 1 < htfBars.Count) ? htfBars[mainIndex + 1].OpenTime : DateTime.MaxValue;
 
-            Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
-            Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
-            if (ls != null) Print(htf + "_ls price: " + ls.Price);
-            if (hr != null) Print(htf + "_hr price: " + hr.Price);
+            if (isNew) Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            if (isNew) Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
+            if (isNew && ls != null) Print(htf + "_ls price: " + ls.Price);
+            if (isNew && hr != null) Print(htf + "_hr price: " + hr.Price);
 
             int firstLTFForS = -1;
             int firstLTFForR = -1;
@@ -404,26 +408,26 @@ namespace cAlgo
                 var ltfBar = ltfBars[i];
                 if (ltfBar.OpenTime >= startTime && ltfBar.OpenTime < endTime)
                 {
-                    Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
+                    if (isNew) Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
                     // Check for ls (support) - downward wick touch
                     bool touchS = ls != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, ls.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, ls.Price));
-                    Print("Touch S: " + touchS);
+                    if (isNew && firstLTFForS == -1) Print("Touch S: " + touchS);
                     if (touchS && firstLTFForS == -1)
                     {
                         firstLTFForS = i;
-                        if(htf == "D") ls.FirstTouchingH4IndexForS = i;
-                        if(htf == "H4") ls.FirstTouchingH1IndexForS = i;
-                        Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
+                        if(htf == "D") ls.IndexFirstTouchH4S = i;
+                        if(htf == "H4") ls.IndexFirstTouchH1S = i;
+                        if (isNew) Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
                     }
                     // Check for hr (resistance) - upward wick touch
                     bool touchR = hr != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, hr.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, hr.Price));
-                    Print("Touch R: " + touchR);
+                    if (isNew && firstLTFForR == -1) Print("Touch R: " + touchR);
                     if (touchR && firstLTFForR == -1)
                     {
                         firstLTFForR = i;
-                        if(htf == "D") hr.FirstTouchingH4IndexForR = i;
-                        if(htf == "H4") hr.FirstTouchingH1IndexForR = i;
-                        Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
+                        if(htf == "D") hr.IndexFirstTouchH4R = i;
+                        if(htf == "H4") hr.IndexFirstTouchH1R = i;
+                        if (isNew) Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
                     }
                     // Since we expect up to 6 H4 or 4 H1 candles, we can break early if both are found
                     if (firstLTFForS != -1 && firstLTFForR != -1) break;
@@ -431,126 +435,18 @@ namespace cAlgo
             }
 
             // Print the first touching indices
-            if (firstLTFForS != -1)
+            if (isNew && firstLTFForS != -1)
             {
                 Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
             }
-            if (firstLTFForR != -1)
+            if (isNew && firstLTFForR != -1)
             {
                 Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
             }
-        }
 
-        private void RunLayer2_D_H4(SR d_hr, SR d_ls, int dailyMainIndex, Bars dailyBars, Bars h4Bars)
-        {
-            if (dailyMainIndex < 0 || dailyMainIndex >= dailyBars.Count) return;
+            // Step 2: find ltf BO_S/R candidates from firstLTFForS/R - 1 to firstLTFForS/R - 60
+            
 
-            var dailyBar = dailyBars[dailyMainIndex];
-            DateTime startTime = dailyBar.OpenTime;
-            DateTime endTime = (dailyMainIndex + 1 < dailyBars.Count) ? dailyBars[dailyMainIndex + 1].OpenTime : DateTime.MaxValue;
-
-            Print("Layer2 D-H4: dailyMainIndex=" + dailyMainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
-            Print("Daily bar: O=" + dailyBar.Open + ", H=" + dailyBar.High + ", L=" + dailyBar.Low + ", C=" + dailyBar.Close);
-            if (d_ls != null) Print("d_ls price: " + d_ls.Price);
-            if (d_hr != null) Print("d_hr price: " + d_hr.Price);
-
-            int firstH4ForS = -1;
-            int firstH4ForR = -1;
-
-            for (int i = 0; i < h4Bars.Count; i++)
-            {
-                var h4Bar = h4Bars[i];
-                if (h4Bar.OpenTime >= startTime && h4Bar.OpenTime < endTime)
-                {
-                    Print("Checking H4 bar " + i + " at " + h4Bar.OpenTime + ": O=" + h4Bar.Open + ", H=" + h4Bar.High + ", L=" + h4Bar.Low + ", C=" + h4Bar.Close);
-                    // Check for d_ls (support) - downward wick touch
-                    bool touchS = d_ls != null && (IsWickTouched(h4Bar.Open, h4Bar.High, h4Bar.Low, h4Bar.Close, d_ls.Price) || IsBodyTouched(h4Bar.Open, h4Bar.Close, d_hr.Price));
-                    Print("Touch S: " + touchS);
-                    if (touchS && firstH4ForS == -1)
-                    {
-                        firstH4ForS = i;
-                        d_ls.FirstTouchingH4IndexForS = i;
-                        Print(">>>>>>>>>> First touch S found at H4 " + i);
-                    }
-                    // Check for d_hr (resistance) - upward wick touch
-                    bool touchR = d_hr != null && (IsWickTouched(h4Bar.Open, h4Bar.High, h4Bar.Low, h4Bar.Close, d_hr.Price) || IsBodyTouched(h4Bar.Open, h4Bar.Close, d_hr.Price));
-                    Print("Touch R: " + touchR);
-                    if (touchR && firstH4ForR == -1)
-                    {
-                        firstH4ForR = i;
-                        d_hr.FirstTouchingH4IndexForR = i;
-                        Print(">>>>>>>>>> First touch R found at H4 " + i);
-                    }
-                    // Since we expect up to 6 H4 candles, we can break early if both are found
-                    if (firstH4ForS != -1 && firstH4ForR != -1) break;
-                }
-            }
-
-            // Print the first touching indices
-            if (firstH4ForS != -1)
-            {
-                Print("first h4 bar for d_s: " + firstH4ForS);
-            }
-            if (firstH4ForR != -1)
-            {
-                Print("first h4 bar for d_r: " + firstH4ForR);
-            }
-        }
-
-        private void RunLayer2_H4_H1(SR h4_hr, SR h4_ls, int h4MainIndex, Bars h4Bars, Bars h1Bars)
-        {
-            if (h4MainIndex < 0 || h4MainIndex >= h4Bars.Count) return;
-
-            var h4Bar = h4Bars[h4MainIndex];
-            DateTime startTime = h4Bar.OpenTime;
-            DateTime endTime = (h4MainIndex + 1 < h4Bars.Count) ? h4Bars[h4MainIndex + 1].OpenTime : DateTime.MaxValue;
-
-            Print("Layer2 H4-H1: h4MainIndex=" + h4MainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
-            Print("H4 bar: O=" + h4Bar.Open + ", H=" + h4Bar.High + ", L=" + h4Bar.Low + ", C=" + h4Bar.Close);
-            if (h4_ls != null) Print("h4_ls price: " + h4_ls.Price);
-            if (h4_hr != null) Print("h4_hr price: " + h4_hr.Price);
-
-            int firstH1ForS = -1;
-            int firstH1ForR = -1;
-
-            for (int i = 0; i < h1Bars.Count; i++)
-            {
-                var h1Bar = h1Bars[i];
-                if (h1Bar.OpenTime >= startTime && h1Bar.OpenTime < endTime)
-                {
-                    Print("Checking H1 bar " + i + " at " + h1Bar.OpenTime + ": O=" + h1Bar.Open + ", H=" + h1Bar.High + ", L=" + h1Bar.Low + ", C=" + h1Bar.Close);
-                    // Check for h4_ls (support) - downward wick touch
-                    bool touchS = h4_ls != null && (IsWickTouched(h1Bar.Open, h1Bar.High, h1Bar.Low, h1Bar.Close, h4_ls.Price) || IsBodyTouched(h1Bar.Open, h1Bar.Close, h4_ls.Price));
-                    Print("Touch S: " + touchS);
-                    if (touchS && firstH1ForS == -1)
-                    {
-                        firstH1ForS = i;
-                        h4_ls.FirstTouchingH1IndexForS = i;
-                        Print(">>>>>>>>>> First touch S found at H1 " + i);
-                    }
-                    // Check for h4_hr (resistance) - upward wick touch
-                    bool touchR = h4_hr != null && (IsWickTouched(h1Bar.Open, h1Bar.High, h1Bar.Low, h1Bar.Close, h4_hr.Price) || IsBodyTouched(h1Bar.Open, h1Bar.Close, h4_hr.Price));
-                    Print("Touch R: " + touchR);
-                    if (touchR && firstH1ForR == -1)
-                    {
-                        firstH1ForR = i;
-                        h4_hr.FirstTouchingH1IndexForR = i;
-                        Print(">>>>>>>>>> First touch R found at H1 " + i);
-                    }
-                    // Since we expect up to 4 H1 candles, we can break early if both are found
-                    if (firstH1ForS != -1 && firstH1ForR != -1) break;
-                }
-            }
-
-            // Print the first touching indices
-            if (firstH1ForS != -1)
-            {
-                Print("first h1 bar for h4_s: " + firstH1ForS);
-            }
-            if (firstH1ForR != -1)
-            {
-                Print("first h1 bar for h4_r: " + firstH1ForR);
-            }
         }
 
         public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex)
