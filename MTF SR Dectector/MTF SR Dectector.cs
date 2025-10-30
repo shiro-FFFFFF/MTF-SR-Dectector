@@ -267,16 +267,25 @@ namespace cAlgo
             h4BarsCount = h4Bars.Count;
             h1Bars = MarketData.GetBars(TimeFrame.Hour);
             h1BarsCount = h1Bars.Count;
-            while(h4Bars.LastBar != h4Bars[^1])
-            {
-                Print(h4Bars.LastBar);
-            }
+            // while(h4Bars.LastBar != h4Bars[^1])
+            // {
+            //     Print(h4Bars.LastBar);
+            // }
             Print("\nLast Daily bar index: " + dailyBars.Count.ToString() + " @" + dailyBars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nLast H4 bar index: " + h4Bars.Count.ToString() + " @" + h4Bars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
             Print("\nD bar[1405]: " + dailyBars[1405].Close + " @" + dailyBars[1405].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nD bar[1411]: " + dailyBars[1411].Close + " @" + dailyBars[1411].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1154]: " + h4Bars[1154].Close + " @" + h4Bars[1154].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1139]: " + h4Bars[1139].Close + " @" + h4Bars[1139].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
 
             // Initialize SR dictionaries
             dailySRs = new Dictionary<int, SR>();
             h4SRs = new Dictionary<int, SR>();
+
+            // Color Tester
+            // 255,255,255,0 Yellow
+            // 255,0,255,255 Aqua
+            // 255,255,140,0 Orange
+            // 255,255,0,0 Red
+            // 255,0,255,0 Green
+            // 255,238,130,238 Pink
+            // ColorTester();
         }
 
         public override void Calculate(int index)
@@ -396,8 +405,8 @@ namespace cAlgo
             if (temp && h4BoR != null) Print("H4 BO_R at " + timeH4BoR + ": " + h4BoR.ToString());
             if (temp && h1BoS != null) Print("H1 BO_S at " + timeH1BoS + ": " + h1BoS.ToString());
             if (temp && h1BoR != null) Print("H1 BO_R at " + timeH1BoR + ": " + h1BoR.ToString());
-            Chart.DrawStaticText("D_signal", "D Signal: " + dSignal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 0 ? Color.White : (dSignal > 0 ? Color.Lime : Color.Red));
-            Chart.DrawStaticText("H4_signal", "\nH4 Signal: " + h4Signal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 0 ? Color.White : (h4Signal > 0 ? Color.Lime : Color.Red));
+            Chart.DrawStaticText("D Signal", "D Signal: " + dSignal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 0 ? Color.White : (dSignal > 0 ? Color.Lime : Color.Red));
+            Chart.DrawStaticText("H4 Signal", "\nH4 Signal: " + h4Signal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 0 ? Color.White : (h4Signal > 0 ? Color.Lime : Color.Red));
             Print("D Signal: " + dSignal.ToString() + ", H4 Signal: " + h4Signal.ToString());
         }
 
@@ -468,7 +477,7 @@ namespace cAlgo
                     if (pos != -1)
                     {
                         DateTime endTime = r.TimeRejUp[pos];
-                        Chart.DrawTrendLine(hrName, startTime, r.Price, endTime, r.Price, resistanceColor, LineThickness, LineStyle.Solid);
+                        Chart.DrawTrendLine(hrName, startTime, r.Price, endTime, r.Price, resistanceColor, LineThickness, prefix == "D" ? LineStyle.LinesDots : LineStyle.Lines);
                         Chart.DrawText(hrName + "_Label", prefix + "_R", chartIndex + 2, r.Price, resistanceColor);
                     }
                 }
@@ -480,7 +489,7 @@ namespace cAlgo
                     if (pos != -1)
                     {
                         DateTime endTime = s.TimeRejLo[pos];
-                        Chart.DrawTrendLine(lsName, startTime, s.Price, endTime, s.Price, supportColor, LineThickness, LineStyle.Solid);
+                        Chart.DrawTrendLine(lsName, startTime, s.Price, endTime, s.Price, supportColor, LineThickness, prefix == "D" ? LineStyle.LinesDots : LineStyle.Lines);
                         Chart.DrawText(lsName + "_Label", prefix + "_S", chartIndex + 2, s.Price, supportColor);
                     }
                 }
@@ -490,17 +499,174 @@ namespace cAlgo
                 if (r != null)
                 {
                     string rName = prefix + "_R";
-                    Chart.DrawTrendLine(rName, r.Timestamp, r.Price, timeBoR, r.Price, resistanceColor, LineThickness, LineStyle.Dots);
+                    Chart.DrawTrendLine(rName, r.Timestamp, r.Price, timeBoR, r.Price, resistanceColor, LineThickness, LineStyle.Solid);
                     Chart.DrawText(rName + "_Label", prefix + "_R", chartIndex + 2, r.Price, resistanceColor);
                 }
                 if (s != null)
                 {
                     string sName = prefix + "_S";
-                    Chart.DrawTrendLine(sName, s.Timestamp, s.Price, timeBoS, s.Price, supportColor, LineThickness, LineStyle.Dots);
+                    Chart.DrawTrendLine(sName, s.Timestamp, s.Price, timeBoS, s.Price, supportColor, LineThickness, LineStyle.Solid);
                     Chart.DrawText(sName + "_Label", prefix + "_S", chartIndex + 2, s.Price, supportColor);
                 }
             }
         }
+
+        public void ColorTester()
+        {
+            Color[] colors = new Color[] {
+                Color.Transparent,
+                Color.AliceBlue,
+                Color.AntiqueWhite,
+                Color.Aqua,
+                Color.Aquamarine,
+                Color.Azure,
+                Color.Beige,
+                Color.Bisque,
+                Color.Black,
+                Color.BlanchedAlmond,
+                Color.Blue,
+                Color.BlueViolet,
+                Color.Brown,
+                Color.BurlyWood,
+                Color.CadetBlue,
+                Color.Chartreuse,
+                Color.Chocolate,
+                Color.Coral,
+                Color.CornflowerBlue,
+                Color.Cornsilk,
+                Color.Crimson,
+                Color.Cyan,
+                Color.DarkBlue,
+                Color.DarkCyan,
+                Color.DarkGoldenrod,
+                Color.DarkGray,
+                Color.DarkGreen,
+                Color.DarkKhaki,
+                Color.DarkMagenta,
+                Color.DarkOliveGreen,
+                Color.DarkOrange,
+                Color.DarkOrchid,
+                Color.DarkRed,
+                Color.DarkSalmon,
+                Color.DarkSeaGreen,
+                Color.DarkSlateBlue,
+                Color.DarkSlateGray,
+                Color.DarkTurquoise,
+                Color.DarkViolet,
+                Color.DeepPink,
+                Color.DeepSkyBlue,
+                Color.DimGray,
+                Color.DodgerBlue,
+                Color.Firebrick,
+                Color.FloralWhite,
+                Color.ForestGreen,
+                Color.Fuchsia,
+                Color.Gainsboro,
+                Color.GhostWhite,
+                Color.Gold,
+                Color.Goldenrod,
+                Color.Gray,
+                Color.Green,
+                Color.GreenYellow,
+                Color.Honeydew,
+                Color.HotPink,
+                Color.IndianRed,
+                Color.Indigo,
+                Color.Ivory,
+                Color.Khaki,
+                Color.Lavender,
+                Color.LavenderBlush,
+                Color.LawnGreen,
+                Color.LemonChiffon,
+                Color.LightBlue,
+                Color.LightCoral,
+                Color.LightCyan,
+                Color.LightGoldenrodYellow,
+                Color.LightGray,
+                Color.LightGreen,
+                Color.LightPink,
+                Color.LightSalmon,
+                Color.LightSeaGreen,
+                Color.LightSkyBlue,
+                Color.LightSlateGray,
+                Color.LightSteelBlue,
+                Color.LightYellow,
+                Color.Lime,
+                Color.LimeGreen,
+                Color.Linen,
+                Color.Magenta,
+                Color.Maroon,
+                Color.MediumAquamarine,
+                Color.MediumBlue,
+                Color.MediumOrchid,
+                Color.MediumPurple,
+                Color.MediumSeaGreen,
+                Color.MediumSlateBlue,
+                Color.MediumSpringGreen,
+                Color.MediumTurquoise,
+                Color.MediumVioletRed,
+                Color.MidnightBlue,
+                Color.MintCream,
+                Color.MistyRose,
+                Color.Moccasin,
+                Color.NavajoWhite,
+                Color.Navy,
+                Color.OldLace,
+                Color.Olive,
+                Color.OliveDrab,
+                Color.Orange,
+                Color.OrangeRed,
+                Color.Orchid,
+                Color.PaleGoldenrod,
+                Color.PaleGreen,
+                Color.PaleTurquoise,
+                Color.PaleVioletRed,
+                Color.PapayaWhip,
+                Color.PeachPuff,
+                Color.Peru,
+                Color.Pink,
+                Color.Plum,
+                Color.PowderBlue,
+                Color.Purple,
+                Color.Red,
+                Color.RosyBrown,
+                Color.RoyalBlue,
+                Color.SaddleBrown,
+                Color.Salmon,
+                Color.SandyBrown,
+                Color.SeaGreen,
+                Color.SeaShell,
+                Color.Sienna,
+                Color.Silver,
+                Color.SkyBlue,
+                Color.SlateBlue,
+                Color.SlateGray,
+                Color.Snow,
+                Color.SpringGreen,
+                Color.SteelBlue,
+                Color.Tan,
+                Color.Teal,
+                Color.Thistle,
+                Color.Tomato,
+                Color.Turquoise,
+                Color.Violet,
+                Color.Wheat,
+                Color.White,
+                Color.WhiteSmoke,
+                Color.Yellow,
+                Color.YellowGreen
+            };
+            int index = 70;
+            foreach (Color color in colors)
+            {
+                string colorName = color.ToString();
+                Chart.DrawHorizontalLine("ColorTest_" + colorName, index * 40, color, 1, LineStyle.Solid);
+                Chart.DrawText("ColorTest_" + colorName, colorName.ToString(), Server.Time, index * 40, color);
+                index--;
+            }
+
+        }
+
         public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex, int lookbackIndex)
         {
             SR hr = null;
@@ -557,7 +723,7 @@ namespace cAlgo
         private (SR hs, SR lr, DateTime timeBoS, DateTime timeBoR, short signal) RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars, Dictionary<int, SR> srs, short prevSignal)
         {
             // step 1: get ltf main bar
-            if (mainIndex < 0 || mainIndex >= htfBars.Count) return (null, null, new DateTime(), new DateTime(), 0);
+            // if (mainIndex < 0 || mainIndex >= htfBars.Count) return (null, null, new DateTime(), new DateTime(), 0);
 
             var htfBar = htfBars[mainIndex];
             DateTime startTime = htfBar.OpenTime;
@@ -702,8 +868,8 @@ namespace cAlgo
             Print("\nHS: " + (hs != null ? hs.ToString() : "null") + "\nLR: " + (lr != null ? lr.ToString() : "null") + "\ntimeBoS: " + timeBoS.ToString("yyyy-MM-dd HH:mm:ss") + "\ntimeBoR: " + timeBoR.ToString("yyyy-MM-dd HH:mm:ss") + "\nprevSignal: " + prevSignal.ToString());
             // Step 4: Determine signal
             if (indexBoS == -1 && indexBoR == -1) return (hs, lr, timeBoS, timeBoR, 0); // no signal case 1
-            if (indexBoS == ltfBars.Count - 1 || indexBoR == ltfBars.Count - 1) return (hs, lr, timeBoS, timeBoR, 0); // no signal case 2
-            if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS == indexBoR) return (null, null, new DateTime(), new DateTime(), 0); // no signal case 3
+            if (indexBoS == ltfBars.Count - 1 || indexBoR == ltfBars.Count - 1) return (hs, lr, timeBoS, timeBoR, 2); // no signal case 2
+            if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS == indexBoR) return (null, null, new DateTime(), new DateTime(), 3); // no signal case 3
             if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS < indexBoR) return (null, lr, new DateTime(), timeBoR, 1); // bullish signal
             if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS > indexBoR) return (hs, null, timeBoS, new DateTime(), -1); // bearish signal
 
