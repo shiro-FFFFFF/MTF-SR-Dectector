@@ -116,7 +116,7 @@
         "MinValue": -2147483648,
         "MaxValue": 2147483647,
         "Step": 1,
-        "DefaultValue": 60,
+        "DefaultValue": 100,
         "ParameterType": "Integer",
         "PropertyName": "LookbackBars",
         "FriendlyName": "Lookback Bars",
