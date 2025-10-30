@@ -85,12 +85,12 @@ public class SR
         return b;
     }
 
-    public bool CheckBreakout(int currBarIndex, DateTime currTime, double currOpen, double currClose, bool debug = false)
+    public bool CheckBreakout(int currBarIndex, DateTime currTime, double currOpen, double currClose, int dir = 0, bool debug = false)
     {
         bool b = cAlgo.MTFSRDectector.IsBodyTouched(currOpen, currClose, this.Price);
         if (this.Index + 2 <= currBarIndex)
         {
-            if (b)
+            if (b && (dir == 0 || (dir > 0 && cAlgo.MTFSRDectector.IsBullish(currOpen, currClose)) || (dir < 0 && cAlgo.MTFSRDectector.IsBearish(currOpen, currClose))))
             {
                 this.IsFresh = true;
                 this.IndexBo.Add(currBarIndex);
@@ -108,11 +108,12 @@ public class SR
                     this.IsSupport = true;
                 }
             }
+            else return false;
         }
         return b;
     }
 
-    public SR RevertTo(int index, int currBarIndex, bool debug = false)
+    public SR RevertTo(int index, int currBarIndex)
     {
         SR x = new SR
         {
@@ -178,14 +179,6 @@ public class SR
                         x.TimeRejLo.RemoveAt(pos);
                     }
                 }
-                // TimeBo, TimeRejUp, TimeRejLo are now DateTime, but i is int (bar index), so this logic needs to change
-                // Since TimeBo etc. are now DateTime, we can't use IndexOf with int i
-                // The RevertTo method seems to be reverting based on bar indices, not times
-                // But the task is to change time fields to DateTime, so perhaps remove these blocks or adjust
-                // Looking at the code, these if statements are checking if the bar index i is in the TimeBo list, but TimeBo is now DateTime
-                // This seems like a bug in the original code, as TimeBo should correspond to IndexBo
-                // Probably these should be removed or changed to use IndexBo instead
-                // But the task is only to change time fields, so I'll comment them out for now
             }
             if (flip)
             {
@@ -198,7 +191,7 @@ public class SR
                 int b = x.IndexRejUp.Count > 0 ? x.IndexRejUp[^1] : 0;
                 int c = x.IndexRejLo.Count > 0 ? x.IndexRejLo[^1] : 0;
                 int indexLastAction = Math.Max(a, Math.Max(b, c));
-                x.IsFresh = x.IndexBo.Contains(indexLastAction);
+                x.IsFresh = x.IndexBo.Contains(indexLastAction) || (x.IndexRejUp.Count == 0 && x.IndexRejLo.Count == 0);
             }
         }
         return x;
@@ -213,12 +206,6 @@ namespace cAlgo
         [Parameter(DefaultValue = "Hello world!")]
         public string Message { get; set; }
 
-        [Parameter("Support Color", DefaultValue = "Green")]
-        public Color SupportColor { get; set; }
-
-        [Parameter("Resistance Color", DefaultValue = "Red")]
-        public Color ResistanceColor { get; set; }
-
         [Parameter("Daily Support Color", DefaultValue = "Green")]
         public Color DailySupportColor { get; set; }
 
@@ -231,6 +218,18 @@ namespace cAlgo
         [Parameter("H4 Resistance Color", DefaultValue = "Orange")]
         public Color H4ResistanceColor { get; set; }
 
+        [Parameter("H4 Support BO Color", DefaultValue = "BlueViolet")]
+        public Color H4SupportBoColor { get; set; }
+
+        [Parameter("H4 Resistance BO Color", DefaultValue = "BlueViolet")]
+        public Color H4ResistanceBoColor { get; set; }
+
+        [Parameter("H1 Support BO Color", DefaultValue = "Cyan")]
+        public Color H1SupportBoColor { get; set; }
+
+        [Parameter("H1 Resistance BO Color", DefaultValue = "Cyan")]
+        public Color H1ResistanceBoColor { get; set; }
+
         [Parameter("Lookback Bars", DefaultValue = 60)]
         public int LookbackBars { get; set; }
 
@@ -242,15 +241,18 @@ namespace cAlgo
 
         private Dictionary<int, SR> dailySRs = new Dictionary<int, SR>();
         private Dictionary<int, SR> h4SRs = new Dictionary<int, SR>();
+        private Dictionary<int, SR> h1SRs = new Dictionary<int, SR>();
         private Bars dailyBars;
         private Bars h4Bars;
         private Bars h1Bars;
         private int lastDailyIndex = -1;
         private int lastH4Index = -1;
+        private int lastH1Index = -1;
         private int dailyBarsCount = -1;
         private int h4BarsCount = -1;
         private int h1BarsCount = -1;
-
+        private short dSignal = 0;
+        private short h4Signal = 0;
 
         protected override void Initialize()
         {
@@ -307,14 +309,10 @@ namespace cAlgo
                 int dailyIndex = dailyBars.Count - 1;
                 if (dailyIndex > lastDailyIndex)
                 {
-                    // Remove old SRs beyond lookback
-                    var keysToRemove = dailySRs.Keys.Where(k => k < dailyIndex - LookbackBars + 1).ToList();
-                    foreach (var key in keysToRemove) dailySRs.Remove(key);
-
-                    for (int i = lastDailyIndex + 1; i <= dailyIndex; i++)
+                    for (int i = dailyIndex - LookbackBars * 2 + 1; i < dailyIndex; i++)
                     {
                         ProcessSR(dailySRs, dailyBars, i, TimeFrame.Daily);
-                        Print("D Index = " + i);
+                        // Print("D Index = " + i);
                     }
                     lastDailyIndex = dailyIndex;
                     isNew = true;
@@ -327,41 +325,80 @@ namespace cAlgo
                 int h4Index = h4Bars.Count - 1;
                 if (h4Index > lastH4Index)
                 {
-                    // Remove old SRs beyond lookback
-                    var keysToRemove = h4SRs.Keys.Where(k => k < h4Index - LookbackBars + 1).ToList();
-                    foreach (var key in keysToRemove) h4SRs.Remove(key);
-
-                    for (int i = lastH4Index + 1; i <= h4Index; i++)
+                    for (int i = h4Index - LookbackBars * 2 + 1; i < h4Index; i++)
                     {
                         ProcessSR(h4SRs, h4Bars, i, TimeFrame.Hour4);
-                        Print("H4 Index = " + i);
+                        // Print("H4 Index = " + i);
                     }
                     lastH4Index = h4Index;
                     isNew = true;
                 }
             }
 
+            // Process H1 timeframe
+            if (h1Bars != null && h1Bars.Count > 0)
+            {
+                int h1Index = h1Bars.Count - 1;
+                if (h1Index > lastH1Index)
+                {
+                    for (int i = h1Index - LookbackBars * 2 + 1; i < h1Index; i++)
+                    {
+                        ProcessSR(h1SRs, h1Bars, i, TimeFrame.Hour);
+                        // Print("H1 Index = " + i);
+                    }
+                    lastH1Index = h1Index;
+                    isNew = true;
+                }
+            }
+
+            if (!isNew) return;
+
+            // foreach (var sr in dailySRs.Values)
+            // {
+            //     Print("Daily SR at bar[" + sr.Index + "]: " + sr.ToString());
+            // }
             // Run layer logic for Daily and H4
-            var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1);
-            var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1);
-            if (isNew) Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
-            if (isNew) Print("\nh4MainIndex: " + h4MainIndex.ToString());
-
-            // Run D-H4 Layer 2
-            RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars, isNew);
-
-            // Run H4-H1 Layer 2
-            RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars, isNew);
+            var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1, lastDailyIndex - LookbackBars * 2 - 1);
+            var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1, lastH4Index - LookbackBars * 2 - 1);
+            Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
+            Print("\nh4MainIndex: " + h4MainIndex.ToString());
+            // Print("\nD_S reverted: " + (dailyLS != null ? dailyLS.RevertTo(dailyMainIndex-1, dailyBars.Count - 1).ToString() : "null"));
 
             // Log selected SR levels
-            if (isNew && dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
-            if (isNew && dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
-            if (isNew && h4HR != null) Print("H4 HR: " + h4HR.ToString());
-            if (isNew && h4LS != null) Print("H4 LS: " + h4LS.ToString());
+            bool temp = true;
+            if (temp && dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
+            if (temp && dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
+            if (temp && h4HR != null) Print("H4 HR: " + h4HR.ToString());
+            if (temp && h4LS != null) Print("H4 LS: " + h4LS.ToString());
 
             // Draw levels for Daily and H4
-            DrawSRLevels(dailyHR, dailyLS, "D", DailySupportColor, DailyResistanceColor, index, dailyMainIndex, TimeFrame.Daily);
-            DrawSRLevels(h4HR, h4LS, "H4", H4SupportColor, H4ResistanceColor, index, h4MainIndex, TimeFrame.Hour4);
+            DrawSRLevels(dailyHR, dailyLS, "D", DailySupportColor, DailyResistanceColor, index, dailyMainIndex, new DateTime(), new DateTime(), TimeFrame.Daily);
+            DrawSRLevels(h4HR, h4LS, "H4", H4SupportColor, H4ResistanceColor, index, h4MainIndex, new DateTime(), new DateTime(), TimeFrame.Hour4);
+
+            // Run D-H4 Layer 2
+            SR h4BoS;
+            SR h4BoR;
+            DateTime timeH4BoS;
+            DateTime timeH4BoR;
+            (h4BoS, h4BoR, timeH4BoS, timeH4BoR, dSignal) = RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars, h4SRs, dSignal);
+            DrawSRLevels(h4BoR, h4BoS, "H4_BO", H4SupportBoColor, H4ResistanceBoColor, index, 0, timeH4BoS, timeH4BoR, TimeFrame.Hour4);
+
+            // Run H4-H1 Layer 2
+            SR h1BoS;
+            SR h1BoR;
+            DateTime timeH1BoS;
+            DateTime timeH1BoR;
+            (h1BoS, h1BoR, timeH1BoS, timeH1BoR, h4Signal) = RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars, h1SRs, h4Signal);
+            DrawSRLevels(h1BoR, h1BoS, "H1_BO", H1SupportBoColor, H1ResistanceBoColor, index, 0, timeH1BoS, timeH1BoR, TimeFrame.Hour);
+            
+            // Log BO levels
+            if (temp && h4BoS != null) Print("H4 BO_S at " + timeH4BoS + ": " + h4BoS.ToString());
+            if (temp && h4BoR != null) Print("H4 BO_R at " + timeH4BoR + ": " + h4BoR.ToString());
+            if (temp && h1BoS != null) Print("H1 BO_S at " + timeH1BoS + ": " + h1BoS.ToString());
+            if (temp && h1BoR != null) Print("H1 BO_R at " + timeH1BoR + ": " + h1BoR.ToString());
+            Chart.DrawStaticText("D_signal", "D Signal: " + dSignal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 0 ? Color.White : (dSignal > 0 ? Color.Lime : Color.Red));
+            Chart.DrawStaticText("H4_signal", "\nH4 Signal: " + h4Signal.ToString(), VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 0 ? Color.White : (h4Signal > 0 ? Color.Lime : Color.Red));
+            Print("D Signal: " + dSignal.ToString() + ", H4 Signal: " + h4Signal.ToString());
         }
 
         public static bool IsBearish(double open, double close)
@@ -384,117 +421,6 @@ namespace cAlgo
         public static bool IsBodyTouched(double open, double close, double level)
         {
             return (open > level && close < level) || (open < level && close > level);
-        }
-
-        private void RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars, bool isNew)
-        {
-            // step 1: get ltf main bar
-            if (mainIndex < 0 || mainIndex >= htfBars.Count) return;
-
-            var htfBar = htfBars[mainIndex];
-            DateTime startTime = htfBar.OpenTime;
-            DateTime endTime = (mainIndex + 1 < htfBars.Count) ? htfBars[mainIndex + 1].OpenTime : DateTime.MaxValue;
-
-            if (isNew) Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
-            if (isNew) Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
-            if (isNew && ls != null) Print(htf + "_ls price: " + ls.Price);
-            if (isNew && hr != null) Print(htf + "_hr price: " + hr.Price);
-
-            int firstLTFForS = -1;
-            int firstLTFForR = -1;
-
-            for (int i = 0; i < ltfBars.Count; i++)
-            {
-                var ltfBar = ltfBars[i];
-                if (ltfBar.OpenTime >= startTime && ltfBar.OpenTime < endTime)
-                {
-                    if (isNew) Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
-                    // Check for ls (support) - downward wick touch
-                    bool touchS = ls != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, ls.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, ls.Price));
-                    if (isNew && firstLTFForS == -1) Print("Touch S: " + touchS);
-                    if (touchS && firstLTFForS == -1)
-                    {
-                        firstLTFForS = i;
-                        if(htf == "D") ls.IndexFirstTouchH4S = i;
-                        if(htf == "H4") ls.IndexFirstTouchH1S = i;
-                        if (isNew) Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
-                    }
-                    // Check for hr (resistance) - upward wick touch
-                    bool touchR = hr != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, hr.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, hr.Price));
-                    if (isNew && firstLTFForR == -1) Print("Touch R: " + touchR);
-                    if (touchR && firstLTFForR == -1)
-                    {
-                        firstLTFForR = i;
-                        if(htf == "D") hr.IndexFirstTouchH4R = i;
-                        if(htf == "H4") hr.IndexFirstTouchH1R = i;
-                        if (isNew) Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
-                    }
-                    // Since we expect up to 6 H4 or 4 H1 candles, we can break early if both are found
-                    if (firstLTFForS != -1 && firstLTFForR != -1) break;
-                }
-            }
-
-            // Print the first touching indices
-            if (isNew && firstLTFForS != -1)
-            {
-                Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
-            }
-            if (isNew && firstLTFForR != -1)
-            {
-                Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
-            }
-
-            // Step 2: find ltf BO_S/R candidates from firstLTFForS/R - 1 to firstLTFForS/R - 60
-            
-
-        }
-
-        public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex)
-        {
-            SR hr = null;
-            SR ls = null;
-            int mainIndex = 0;
-            // if (isLast)
-            // {
-            //     return (hr, ls, mainIndex);
-            // }
-            // Find mainIndex from confirmed bars only (avoid unclosed current bar)
-            foreach (var sr in srs.Values)
-            {
-                int lastIndex = 0;
-                if (sr.IsSupport && sr.IndexRejLo.Count > 0)
-                {
-                    lastIndex = sr.IndexRejLo[^1];
-                }
-                else if (sr.IsResistance && sr.IndexRejUp.Count > 0)
-                {
-                    lastIndex = sr.IndexRejUp[^1];
-                }
-                if (lastIndex > mainIndex && lastIndex < barIndex)
-                {
-                    mainIndex = lastIndex;
-                }
-            }
-            // Now revert and select
-            foreach (var sr in srs.Values)
-            {
-                var reverted = sr.RevertTo(mainIndex, barIndex, false);
-                if (reverted.IsResistance && reverted.IndexRejUp.Contains(mainIndex))
-                {
-                    if (hr == null || reverted.Price > hr.Price)
-                    {
-                        hr = reverted;
-                    }
-                }
-                if (reverted.IsSupport && reverted.IndexRejLo.Contains(mainIndex))
-                {
-                    if (ls == null || reverted.Price < ls.Price)
-                    {
-                        ls = reverted;
-                    }
-                }
-            }
-            return (hr, ls, mainIndex);
         }
 
         private void ProcessSR(Dictionary<int, SR> srs, Bars bars, int barIndex, TimeFrame tf)
@@ -520,7 +446,7 @@ namespace cAlgo
             }
         }
 
-        private void DrawSRLevels(SR hr, SR ls, string prefix, Color supportColor, Color resistanceColor, int chartIndex, int mainIndex, TimeFrame tf)
+        private void DrawSRLevels(SR r, SR s, string prefix, Color supportColor, Color resistanceColor, int chartIndex, int mainIndex, DateTime timeBoS, DateTime timeBoR, TimeFrame tf)
         {
             if (Chart.TimeFrame > tf) return;
 
@@ -531,31 +457,257 @@ namespace cAlgo
                 Chart.RemoveObject(line.Name);
             }
 
-            // Draw current HR and LS with labels
-            if (hr != null)
+            // Draw R and S with labels
+            if (!prefix.Contains("BO"))
             {
-                string hrName = prefix + "_R";
-                DateTime startTime = hr.Timestamp;
-                int pos = hr.IndexRejUp.IndexOf(mainIndex);
-                if (pos != -1)
+                if (r != null)
                 {
-                    DateTime endTime = hr.TimeRejUp[pos];
-                    Chart.DrawTrendLine(hrName, startTime, hr.Price, endTime, hr.Price, resistanceColor, LineThickness, LineStyle.Solid);
-                    Chart.DrawText(hrName + "_Label", prefix + "_R", chartIndex + 2, hr.Price, resistanceColor);
+                    string hrName = prefix + "_R";
+                    DateTime startTime = r.Timestamp;
+                    int pos = r.IndexRejUp.IndexOf(mainIndex);
+                    if (pos != -1)
+                    {
+                        DateTime endTime = r.TimeRejUp[pos];
+                        Chart.DrawTrendLine(hrName, startTime, r.Price, endTime, r.Price, resistanceColor, LineThickness, LineStyle.Solid);
+                        Chart.DrawText(hrName + "_Label", prefix + "_R", chartIndex + 2, r.Price, resistanceColor);
+                    }
+                }
+                if (s != null)
+                {
+                    string lsName = prefix + "_S";
+                    DateTime startTime = s.Timestamp;
+                    int pos = s.IndexRejLo.IndexOf(mainIndex);
+                    if (pos != -1)
+                    {
+                        DateTime endTime = s.TimeRejLo[pos];
+                        Chart.DrawTrendLine(lsName, startTime, s.Price, endTime, s.Price, supportColor, LineThickness, LineStyle.Solid);
+                        Chart.DrawText(lsName + "_Label", prefix + "_S", chartIndex + 2, s.Price, supportColor);
+                    }
                 }
             }
-            if (ls != null)
+            else
             {
-                string lsName = prefix + "_S";
-                DateTime startTime = ls.Timestamp;
-                int pos = ls.IndexRejLo.IndexOf(mainIndex);
-                if (pos != -1)
+                if (r != null)
                 {
-                    DateTime endTime = ls.TimeRejLo[pos];
-                    Chart.DrawTrendLine(lsName, startTime, ls.Price, endTime, ls.Price, supportColor, LineThickness, LineStyle.Solid);
-                    Chart.DrawText(lsName + "_Label", prefix + "_S", chartIndex + 2, ls.Price, supportColor);
+                    string rName = prefix + "_R";
+                    Chart.DrawTrendLine(rName, r.Timestamp, r.Price, timeBoR, r.Price, resistanceColor, LineThickness, LineStyle.Dots);
+                    Chart.DrawText(rName + "_Label", prefix + "_R", chartIndex + 2, r.Price, resistanceColor);
+                }
+                if (s != null)
+                {
+                    string sName = prefix + "_S";
+                    Chart.DrawTrendLine(sName, s.Timestamp, s.Price, timeBoS, s.Price, supportColor, LineThickness, LineStyle.Dots);
+                    Chart.DrawText(sName + "_Label", prefix + "_S", chartIndex + 2, s.Price, supportColor);
                 }
             }
+        }
+        public static (SR hr, SR ls, int mainIndex) RunLayer1(Dictionary<int, SR> srs, int barIndex, int lookbackIndex)
+        {
+            SR hr = null;
+            SR ls = null;
+            int mainIndex = 0;
+
+            foreach (var l in srs.Values)
+            {
+                var sr = l;
+                if (sr.Index < lookbackIndex) continue;
+                int lastIndex = 0;
+                SR s = null;
+                SR r = null;
+                if (sr.IndexRejLo.Count > 0) s = sr.RevertTo(sr.IndexRejLo[^1], barIndex);
+                if (sr.IndexRejUp.Count > 0) r = sr.RevertTo(sr.IndexRejUp[^1], barIndex);
+                if (s != null && s.IsSupport)
+                {
+                    lastIndex = sr.IndexRejLo[^1];
+                }
+                if (r != null && r.IsResistance)
+                {
+                    lastIndex = Math.Max(lastIndex, sr.IndexRejUp[^1]);
+                }
+                if (lastIndex > mainIndex && lastIndex < barIndex)
+                {
+                    mainIndex = lastIndex;
+                }
+            }
+            // Now revert and select
+            foreach (var sr in srs.Values)
+            {
+                if (sr.Index < lookbackIndex) continue;
+                var reverted1 = sr.RevertTo(mainIndex, barIndex);
+                var reverted2 = sr.RevertTo(mainIndex - 1, barIndex);
+                if (reverted1.IsResistance && reverted2.IsFresh && reverted1.IndexRejUp.Count > 0 && reverted1.IndexRejUp[^1] == mainIndex)
+                {
+                    if (hr == null || reverted1.Price > hr.Price)
+                    {
+                        hr = reverted1;
+                        continue;
+                    }
+                }
+                if (reverted1.IsSupport && reverted2.IsFresh && reverted1.IndexRejLo.Count > 0 && reverted1.IndexRejLo[^1] == mainIndex)
+                {
+                    if (ls == null || reverted1.Price < ls.Price)
+                    {
+                        ls = reverted1;
+                    }
+                }
+            }
+            return (hr, ls, mainIndex);
+        }
+
+        private (SR hs, SR lr, DateTime timeBoS, DateTime timeBoR, short signal) RunLayer2(string htf, string ltf, SR hr, SR ls, int mainIndex, Bars htfBars, Bars ltfBars, Dictionary<int, SR> srs, short prevSignal)
+        {
+            // step 1: get ltf main bar
+            if (mainIndex < 0 || mainIndex >= htfBars.Count) return (null, null, new DateTime(), new DateTime(), 0);
+
+            var htfBar = htfBars[mainIndex];
+            DateTime startTime = htfBar.OpenTime;
+            DateTime endTime = (mainIndex + 1 < htfBars.Count) ? htfBars[mainIndex + 1].OpenTime : DateTime.MaxValue;
+
+            Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
+            if (ls != null) Print(htf + "_ls price: " + ls.Price);
+            if (hr != null) Print(htf + "_hr price: " + hr.Price);
+
+            int firstLTFForS = -1;
+            int firstLTFForR = -1;
+
+            for (int i = 0; i < ltfBars.Count; i++)
+            {
+                var ltfBar = ltfBars[i];
+                if (ltfBar.OpenTime >= startTime && ltfBar.OpenTime < endTime)
+                {
+                    Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
+                    // Check for ls (support) - downward wick touch
+                    bool touchS = ls != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, ls.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, ls.Price));
+                    if (firstLTFForS == -1) Print("Touch S: " + touchS);
+                    if (touchS && firstLTFForS == -1)
+                    {
+                        firstLTFForS = i;
+                        if(htf == "D") ls.IndexFirstTouchH4S = i;
+                        if(htf == "H4") ls.IndexFirstTouchH1S = i;
+                        Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
+                    }
+                    // Check for hr (resistance) - upward wick touch
+                    bool touchR = hr != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, hr.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, hr.Price));
+                    if (firstLTFForR == -1) Print("Touch R: " + touchR);
+                    if (touchR && firstLTFForR == -1)
+                    {
+                        firstLTFForR = i;
+                        if(htf == "D") hr.IndexFirstTouchH4R = i;
+                        if(htf == "H4") hr.IndexFirstTouchH1R = i;
+                        Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
+                    }
+                    // Since we expect up to 6 H4 or 4 H1 candles, we can break early if both are found
+                    if (firstLTFForS != -1 && firstLTFForR != -1) break;
+                }
+            }
+
+            // Print the first touching indices
+            if (firstLTFForS != -1)
+            {
+                Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
+            }
+            if (firstLTFForR != -1)
+            {
+                Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
+            }
+
+            // Step 2: find unbroken SR levels (LR & HS) before first touching LTF bar
+            int indexBoR = -1;
+            SR lr = null;
+            if (firstLTFForS != -1)
+            {
+                int ltfMainIndex = -1;
+                for (int i = firstLTFForS - 1; i >= firstLTFForS - LookbackBars; i--)
+                {
+                    SR cand = srs[i].RevertTo(firstLTFForS, ltfBars.Count - 1);
+                    if (cand.IsResistance && cand.IsClassic && cand.TimeBo.Count == 0 && (lr == null || cand.Price <= lr.Price))
+                    {
+                        lr = srs[i];
+                        Print(">>>>>>>>>> New " + ltf + " LR: " + cand.ToString());
+                        ltfMainIndex = i;
+                    }
+                }
+
+                // Step 3: Check for BO of LR within this and next HTF bars
+                if (lr != null)
+                {
+                    DateTime startTime2 = (ltfMainIndex + 1 < ltfBars.Count) ? ltfBars[ltfMainIndex + 1].OpenTime : DateTime.MaxValue;
+                    DateTime endTime2 = (mainIndex + 2 < htfBars.Count) ? htfBars[mainIndex + 2].OpenTime : DateTime.MaxValue;
+                    if (lr.TimeBo.Count > 0)
+                    {
+                        for (int i = ltfBars.Count - 1; i > ltfMainIndex; i--)
+                        {
+                            int idx = lr.IndexBo.IndexOf(i);
+                            if (idx != -1 && lr.TimeBo[idx] >= startTime2 && lr.TimeBo[idx] < endTime2)
+                            {
+                                indexBoR = i;
+                                Print(">>>>>>>>>> LR BO found at " + ltf + " bar " + indexBoR + "(" + lr.TimeBo[idx] + ")");
+                            }
+                        }
+                    }
+                    if (indexBoR == -1 && IsWickTouched(ltfBars[^1].Open, ltfBars[^1].High, ltfBars[^1].Low, ltfBars[^1].Close, hr.Price) || IsBodyTouched(ltfBars[^1].Open, ltfBars[^1].Close, lr.Price))
+                    {
+                        indexBoR = ltfBars.Count - 1;
+                        Print(">>>>>>>>>> LR BO found at last " + ltf + " bar (UNCONFIRMED)");
+                    }
+                }
+            }
+
+            int indexBoS = -1;
+            SR hs = null;
+            if (firstLTFForR != -1)
+            {
+                int ltfMainIndex = -1;
+                for (int i = firstLTFForR - 1; i >= firstLTFForR - LookbackBars; i--)
+                {
+                    SR cand = srs[i].RevertTo(firstLTFForS, ltfBars.Count - 1);
+                    if (cand.IsSupport && cand.IsClassic && cand.TimeBo.Count == 0 && (hs == null || cand.Price >= hs.Price))
+                    {
+                        hs = srs[i];
+                        Print(">>>>>>>>>> New " + ltf + " HS: " + cand.ToString());
+                        ltfMainIndex = i;
+                    }
+                }
+
+                // Step 3: Check for BO of HS within this and next HTF bars
+                if (hs != null)
+                {
+                    DateTime startTime2 = (ltfMainIndex + 1 < ltfBars.Count) ? ltfBars[ltfMainIndex + 1].OpenTime : DateTime.MaxValue;
+                    DateTime endTime2 = (mainIndex + 2 < htfBars.Count) ? htfBars[mainIndex + 2].OpenTime : DateTime.MaxValue;
+                    if (hs.TimeBo.Count > 0)
+                    {
+                        for (int i = ltfBars.Count - 1; i > ltfMainIndex; i--)
+                        {
+                            int idx = hs.IndexBo.IndexOf(i);
+                            if (idx != -1 && hs.TimeBo[idx] >= startTime2 && hs.TimeBo[idx] < endTime2)
+                            {
+                                indexBoS = i;
+                                Print(">>>>>>>>>> HS BO found at " + ltf + " bar " + indexBoS + "(" + hs.TimeBo[idx] + ")");
+                            }
+                        }
+                    }
+                    if (indexBoS == -1 && IsWickTouched(ltfBars[^1].Open, ltfBars[^1].High, ltfBars[^1].Low, ltfBars[^1].Close, hs.Price) || IsBodyTouched(ltfBars[^1].Open, ltfBars[^1].Close, hs.Price))
+                    {
+                        indexBoS = ltfBars.Count - 1;
+                        Print(">>>>>>>>>> HS BO found at last " + ltf + " bar (UNCONFIRMED)");
+                    }
+                }
+            }
+
+            DateTime timeBoR = new DateTime();
+            DateTime timeBoS = new DateTime();
+            if (indexBoR != -1) timeBoR = ltfBars[indexBoR].OpenTime;
+            if (indexBoS != -1) timeBoS = ltfBars[indexBoS].OpenTime;
+            Print("\nHS: " + (hs != null ? hs.ToString() : "null") + "\nLR: " + (lr != null ? lr.ToString() : "null") + "\ntimeBoS: " + timeBoS.ToString("yyyy-MM-dd HH:mm:ss") + "\ntimeBoR: " + timeBoR.ToString("yyyy-MM-dd HH:mm:ss") + "\nprevSignal: " + prevSignal.ToString());
+            // Step 4: Determine signal
+            if (indexBoS == -1 && indexBoR == -1) return (hs, lr, timeBoS, timeBoR, 0); // no signal case 1
+            if (indexBoS == ltfBars.Count - 1 || indexBoR == ltfBars.Count - 1) return (hs, lr, timeBoS, timeBoR, 0); // no signal case 2
+            if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS == indexBoR) return (null, null, new DateTime(), new DateTime(), 0); // no signal case 3
+            if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS < indexBoR) return (null, lr, new DateTime(), timeBoR, 1); // bullish signal
+            if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS > indexBoR) return (hs, null, timeBoS, new DateTime(), -1); // bearish signal
+
+            return (hs, lr, timeBoS, timeBoR, prevSignal);
         }
     }
 }

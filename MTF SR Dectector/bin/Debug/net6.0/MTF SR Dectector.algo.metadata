@@ -43,24 +43,6 @@
       {
         "DefaultValue": "#008000FF",
         "ParameterType": "Color",
-        "PropertyName": "SupportColor",
-        "FriendlyName": "Support Color",
-        "GroupName": null,
-        "IsValueVisibleInTitle": false,
-        "Description": ""
-      },
-      {
-        "DefaultValue": "#FF0000FF",
-        "ParameterType": "Color",
-        "PropertyName": "ResistanceColor",
-        "FriendlyName": "Resistance Color",
-        "GroupName": null,
-        "IsValueVisibleInTitle": false,
-        "Description": ""
-      },
-      {
-        "DefaultValue": "#008000FF",
-        "ParameterType": "Color",
         "PropertyName": "DailySupportColor",
         "FriendlyName": "Daily Support Color",
         "GroupName": null,
@@ -90,6 +72,42 @@
         "ParameterType": "Color",
         "PropertyName": "H4ResistanceColor",
         "FriendlyName": "H4 Resistance Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#8A2BE2FF",
+        "ParameterType": "Color",
+        "PropertyName": "H4SupportBoColor",
+        "FriendlyName": "H4 Support BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#8A2BE2FF",
+        "ParameterType": "Color",
+        "PropertyName": "H4ResistanceBoColor",
+        "FriendlyName": "H4 Resistance BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "H1SupportBoColor",
+        "FriendlyName": "H1 Support BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "H1ResistanceBoColor",
+        "FriendlyName": "H1 Resistance BO Color",
         "GroupName": null,
         "IsValueVisibleInTitle": false,
         "Description": ""
