@@ -192,7 +192,7 @@ public class SR
 
 namespace cAlgo
 {
-    [Indicator(AccessRights = AccessRights.None)]
+    [Indicator(IsOverlay = true, AccessRights = AccessRights.None)]
     public class MTFSRDectector : Indicator
     {
         [Parameter("Daily Support Color", DefaultValue = "Green")]
@@ -245,9 +245,6 @@ namespace cAlgo
 
         protected override void Initialize()
         {
-            // To learn more about cTrader Algo visit our Help Center:
-            // https://help.ctrader.com/ctrader-algo/
-
             Print(Chart.TimeFrame.ToString());
             dailyBars = MarketData.GetBars(TimeFrame.Daily);
             dailyBarsCount = dailyBars.Count;
