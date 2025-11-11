@@ -400,13 +400,13 @@ namespace cAlgo
                     dSignalText = "Bearish";
                     break;
                 case 0:
-                    dSignalText = "No Signal (no BO lines)";
+                    dSignalText = "No Signal"; // (no BO lines)";
                     break;
                 case 2:
-                    dSignalText = "No Signal (BO in progress)";
+                    dSignalText = "No Signal"; // (BO in progress)";
                     break;
                 case 3:
-                    dSignalText = "No Signal (1 Bar 2 BO)";
+                    dSignalText = "No Signal"; // (1 Bar 2 BO)";
                     break;
                 default:
                     dSignalText = "Error";
@@ -422,13 +422,13 @@ namespace cAlgo
                     h4SignalText = "Bearish";
                     break;
                 case 0:
-                    h4SignalText = "No Signal (no BO lines)";
+                    h4SignalText = "No Signal"; // (no BO lines)";
                     break;
                 case 2:
-                    h4SignalText = "No Signal (BO in progress)";
+                    h4SignalText = "No Signal"; // (BO in progress)";
                     break;
                 case 3:
-                    h4SignalText = "No Signal (1 Bar 2 BO)";
+                    h4SignalText = "No Signal"; // (1 Bar 2 BO)";
                     break;
                 default:
                     h4SignalText = "Error";

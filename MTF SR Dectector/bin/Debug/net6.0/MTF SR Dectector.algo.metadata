@@ -8,7 +8,7 @@
     "TypeName": "cAlgo.MTFSRDectector",
     "AssemblyName": "MTF SR Dectector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
     "TimeZone": "UTC",
-    "IsOverlay": false,
+    "IsOverlay": true,
     "IsPercentage": false,
     "ScalePrecision": null,
     "Levels": [],
@@ -31,15 +31,6 @@
     ],
     "Clouds": [],
     "Parameters": [
-      {
-        "DefaultValue": "Hello world!",
-        "ParameterType": "String",
-        "PropertyName": "Message",
-        "FriendlyName": "Message",
-        "GroupName": null,
-        "IsValueVisibleInTitle": true,
-        "Description": ""
-      },
       {
         "DefaultValue": "#008000FF",
         "ParameterType": "Color",
