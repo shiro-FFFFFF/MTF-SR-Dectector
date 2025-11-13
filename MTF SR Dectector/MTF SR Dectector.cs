@@ -225,8 +225,11 @@ namespace cAlgo
         [Parameter("Line Thickness", DefaultValue = 1)]
         public int LineThickness { get; set; }
 
-        [Output("Main")]
-        public IndicatorDataSeries Result { get; set; }
+        [Output("D Signal")]
+        public IndicatorDataSeries _dSignal { get; set; }
+
+        [Output("H4 Signal")]
+        public IndicatorDataSeries _h4Signal { get; set; }
 
         private Dictionary<int, SR> dailySRs = new Dictionary<int, SR>();
         private Dictionary<int, SR> h4SRs = new Dictionary<int, SR>();
@@ -437,6 +440,8 @@ namespace cAlgo
             Chart.DrawStaticText("D Signal", "D Signal: " + dSignalText, VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 1 ? Color.Lime : (dSignal == -1 ? Color.Red : Color.White));
             Chart.DrawStaticText("H4 Signal", "\nH4 Signal: " + h4SignalText, VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 1 ? Color.Lime : (h4Signal == -1 ? Color.Red : Color.White));
             Print("D Signal: " + dSignal.ToString() + ", H4 Signal: " + h4Signal.ToString());
+            _dSignal[0] = dSignal == 1 ? 1 : dSignal == -1 ? -1 : 0;
+            _h4Signal[0] = h4Signal == 1 ? 1 : h4Signal == -1 ? -1 : 0;
         }
 
         public static bool IsBearish(double open, double close)

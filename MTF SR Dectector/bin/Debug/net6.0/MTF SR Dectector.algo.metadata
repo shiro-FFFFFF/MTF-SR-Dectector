@@ -17,12 +17,24 @@
     "Video": null,
     "Lines": [
       {
-        "Name": "Main",
+        "Name": "D Signal",
         "Style": "Solid",
         "PlotType": "Line",
         "Thickness": 1.0,
         "Color": "#008000FF",
-        "PropertyName": "Result",
+        "PropertyName": "_dSignal",
+        "IsUsedInAutoScale": true,
+        "IsColorCustomizable": true,
+        "IsLastValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "Name": "H4 Signal",
+        "Style": "Solid",
+        "PlotType": "Line",
+        "Thickness": 1.0,
+        "Color": "#008000FF",
+        "PropertyName": "_h4Signal",
         "IsUsedInAutoScale": true,
         "IsColorCustomizable": true,
         "IsLastValueVisibleInTitle": true,
