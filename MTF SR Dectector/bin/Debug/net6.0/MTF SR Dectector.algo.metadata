@@ -39,6 +39,30 @@
         "IsColorCustomizable": true,
         "IsLastValueVisibleInTitle": true,
         "Description": ""
+      },
+      {
+        "Name": "H1 Signal",
+        "Style": "Solid",
+        "PlotType": "Line",
+        "Thickness": 1.0,
+        "Color": "#008000FF",
+        "PropertyName": "_h1Signal",
+        "IsUsedInAutoScale": true,
+        "IsColorCustomizable": true,
+        "IsLastValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "Name": "M30 Signal",
+        "Style": "Solid",
+        "PlotType": "Line",
+        "Thickness": 1.0,
+        "Color": "#008000FF",
+        "PropertyName": "_m30Signal",
+        "IsUsedInAutoScale": true,
+        "IsColorCustomizable": true,
+        "IsLastValueVisibleInTitle": true,
+        "Description": ""
       }
     ],
     "Clouds": [],
@@ -80,6 +104,42 @@
         "Description": ""
       },
       {
+        "DefaultValue": "#008000FF",
+        "ParameterType": "Color",
+        "PropertyName": "H1SupportColor",
+        "FriendlyName": "H1 Support Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#FF0000FF",
+        "ParameterType": "Color",
+        "PropertyName": "H1ResistanceColor",
+        "FriendlyName": "H1 Resistance Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#0000FFFF",
+        "ParameterType": "Color",
+        "PropertyName": "M30SupportColor",
+        "FriendlyName": "M30 Support Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#FFA500FF",
+        "ParameterType": "Color",
+        "PropertyName": "M30ResistanceColor",
+        "FriendlyName": "M30 Resistance Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
         "DefaultValue": "#8A2BE2FF",
         "ParameterType": "Color",
         "PropertyName": "H4SupportBoColor",
@@ -116,6 +176,42 @@
         "Description": ""
       },
       {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "M30SupportBoColor",
+        "FriendlyName": "M30 Support BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "M30ResistanceBoColor",
+        "FriendlyName": "M30 Resistance BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "M15SupportBoColor",
+        "FriendlyName": "M15 Support BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
+        "DefaultValue": "#00FFFFFF",
+        "ParameterType": "Color",
+        "PropertyName": "M15ResistanceBoColor",
+        "FriendlyName": "M15 Resistance BO Color",
+        "GroupName": null,
+        "IsValueVisibleInTitle": false,
+        "Description": ""
+      },
+      {
         "MinValue": -2147483648,
         "MaxValue": 2147483647,
         "Step": 1,
@@ -135,6 +231,15 @@
         "ParameterType": "Integer",
         "PropertyName": "LineThickness",
         "FriendlyName": "Line Thickness",
+        "GroupName": null,
+        "IsValueVisibleInTitle": true,
+        "Description": ""
+      },
+      {
+        "DefaultValue": true,
+        "ParameterType": "Boolean",
+        "PropertyName": "visual",
+        "FriendlyName": "Visualization",
         "GroupName": null,
         "IsValueVisibleInTitle": true,
         "Description": ""

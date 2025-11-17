@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MTF SR Dectector")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f930741a8305e7e1d7d687a06e7395e6a956dd72")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+60e114d8adf3e2e282a291e4585a30875118566d")]
 [assembly: System.Reflection.AssemblyProductAttribute("MTF SR Dectector")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MTF SR Dectector")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

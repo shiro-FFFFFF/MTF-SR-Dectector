@@ -207,6 +207,18 @@ namespace cAlgo
         [Parameter("H4 Resistance Color", DefaultValue = "Orange")]
         public Color H4ResistanceColor { get; set; }
 
+        [Parameter("H1 Support Color", DefaultValue = "Green")]
+        public Color H1SupportColor { get; set; }
+
+        [Parameter("H1 Resistance Color", DefaultValue = "Red")]
+        public Color H1ResistanceColor { get; set; }
+
+        [Parameter("M30 Support Color", DefaultValue = "Blue")]
+        public Color M30SupportColor { get; set; }
+
+        [Parameter("M30 Resistance Color", DefaultValue = "Orange")]
+        public Color M30ResistanceColor { get; set; }
+
         [Parameter("H4 Support BO Color", DefaultValue = "BlueViolet")]
         public Color H4SupportBoColor { get; set; }
 
@@ -218,6 +230,18 @@ namespace cAlgo
 
         [Parameter("H1 Resistance BO Color", DefaultValue = "Cyan")]
         public Color H1ResistanceBoColor { get; set; }
+
+        [Parameter("M30 Support BO Color", DefaultValue = "Cyan")]
+        public Color M30SupportBoColor { get; set; }
+
+        [Parameter("M30 Resistance BO Color", DefaultValue = "Cyan")]
+        public Color M30ResistanceBoColor { get; set; }
+
+        [Parameter("M15 Support BO Color", DefaultValue = "Cyan")]
+        public Color M15SupportBoColor { get; set; }
+
+        [Parameter("M15 Resistance BO Color", DefaultValue = "Cyan")]
+        public Color M15ResistanceBoColor { get; set; }
 
         [Parameter("Lookback Bars", DefaultValue = 100)]
         public int LookbackBars { get; set; }
@@ -231,40 +255,71 @@ namespace cAlgo
         [Output("H4 Signal")]
         public IndicatorDataSeries _h4Signal { get; set; }
 
+        [Output("H1 Signal")]
+        public IndicatorDataSeries _h1Signal { get; set; }
+
+        [Output("M30 Signal")]
+        public IndicatorDataSeries _m30Signal { get; set; }
+        
+        [Parameter("Visualization", DefaultValue = true)]
+        public bool visual { get; set; }
+
+        // [Output("D Sub-Signal")]
+        // public IndicatorDataSeries _dSubSignal { get; set; }
+
+        // [Output("H4 Sub-Signal")]
+        // public IndicatorDataSeries _h4SubSignal { get; set; }
+
         private Dictionary<int, SR> dailySRs = new Dictionary<int, SR>();
         private Dictionary<int, SR> h4SRs = new Dictionary<int, SR>();
         private Dictionary<int, SR> h1SRs = new Dictionary<int, SR>();
+        private Dictionary<int, SR> m30SRs = new Dictionary<int, SR>();
+        private Dictionary<int, SR> m15SRs = new Dictionary<int, SR>();
         private Bars dailyBars;
         private Bars h4Bars;
         private Bars h1Bars;
+        private Bars m30Bars;
+        private Bars m15Bars;
         private int lastDailyIndex = -1;
         private int lastH4Index = -1;
         private int lastH1Index = -1;
+        private int lastM30Index = -1;
+        private int lastM15Index = -1;
         private int dailyBarsCount = -1;
         private int h4BarsCount = -1;
         private int h1BarsCount = -1;
+        private int m30BarsCount = -1;
+        private int m15BarsCount = -1;
         private short dSignal = 0;
         private short h4Signal = 0;
+        private short h1Signal = 0;
+        private short m30Signal = 0;
 
         protected override void Initialize()
         {
-            Print(Chart.TimeFrame.ToString());
+            // Print(Chart.TimeFrame.ToString());
             dailyBars = MarketData.GetBars(TimeFrame.Daily);
             dailyBarsCount = dailyBars.Count;
             h4Bars = MarketData.GetBars(TimeFrame.Hour4);
             h4BarsCount = h4Bars.Count;
             h1Bars = MarketData.GetBars(TimeFrame.Hour);
             h1BarsCount = h1Bars.Count;
+            m30Bars = MarketData.GetBars(TimeFrame.Minute30);
+            m30BarsCount = m30Bars.Count;
+            m15Bars = MarketData.GetBars(TimeFrame.Minute15);
+            m15BarsCount = m15Bars.Count;
             // while(h4Bars.LastBar != h4Bars[^1])
             // {
-            //     Print(h4Bars.LastBar);
+            //     // Print(h4Bars.LastBar);
             // }
-            Print("\nLast Daily bar index: " + dailyBars.Count.ToString() + " @" + dailyBars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nLast H4 bar index: " + h4Bars.Count.ToString() + " @" + h4Bars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
-            Print("\nD bar[1405]: " + dailyBars[1405].Close + " @" + dailyBars[1405].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nD bar[1411]: " + dailyBars[1411].Close + " @" + dailyBars[1411].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1154]: " + h4Bars[1154].Close + " @" + h4Bars[1154].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1139]: " + h4Bars[1139].Close + " @" + h4Bars[1139].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            // Print("\nLast Daily bar index: " + dailyBars.Count.ToString() + " @" + dailyBars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nLast H4 bar index: " + h4Bars.Count.ToString() + " @" + h4Bars[^1].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            // Print("\nD bar[1405]: " + dailyBars[1405].Close + " @" + dailyBars[1405].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nD bar[1411]: " + dailyBars[1411].Close + " @" + dailyBars[1411].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1154]: " + h4Bars[1154].Close + " @" + h4Bars[1154].OpenTime.ToString("yyyy-MM-dd HH:mm:ss") + "\nH4 bar[1139]: " + h4Bars[1139].Close + " @" + h4Bars[1139].OpenTime.ToString("yyyy-MM-dd HH:mm:ss"));
 
             // Initialize SR dictionaries
             dailySRs = new Dictionary<int, SR>();
             h4SRs = new Dictionary<int, SR>();
+            h1SRs = new Dictionary<int, SR>();
+            m30SRs = new Dictionary<int, SR>();
 
             // Color Tester
             // 255,255,255,0 Yellow
@@ -279,6 +334,7 @@ namespace cAlgo
         public override void Calculate(int index)
         {
             // Print(dailyBarsCount + "\t" + h4BarsCount + "\t" + h1BarsCount);
+            // Print("MTS SR Detector");
             int checkIndex = -1;
             switch (Chart.TimeFrame.ToString())
             {
@@ -290,6 +346,12 @@ namespace cAlgo
                     break;
                 case "Hour":
                     checkIndex = h1BarsCount - 1;
+                    break;
+                case "Minute30":
+                    checkIndex = m30BarsCount - 1;
+                    break;
+                case "Minute15":
+                    checkIndex = m15BarsCount - 1;
                     break;
             }
             // Print(checkIndex);
@@ -348,29 +410,65 @@ namespace cAlgo
                 }
             }
 
+            // Process m30 timeframe
+            if (m30Bars != null && m30Bars.Count > 0)
+            {
+                int m30Index = m30Bars.Count - 1;
+                if (m30Index > lastM30Index)
+                {
+                    for (int i = m30Index - LookbackBars * 2; i < m30Index; i++)
+                    {
+                        ProcessSR(m30SRs, m30Bars, i, TimeFrame.Minute30);
+                        // Print("m30 Index = " + i);
+                    }
+                    lastM30Index = m30Index;
+                    isNew = true;
+                }
+            }
+
+            // Process 15m timeframe
+            if (m15Bars != null && m15Bars.Count > 0)
+            {
+                int m15Index = m15Bars.Count - 1;
+                if (m15Index > lastM15Index)
+                {
+                    for (int i = m15Index - LookbackBars * 2; i < m15Index; i++)
+                    {
+                        ProcessSR(m15SRs, m15Bars, i, TimeFrame.Minute15);
+                        // Print("M15 Index = " + i);
+                    }
+                    lastM15Index = m15Index;
+                    isNew = true;
+                }
+            }
+
             if (!isNew) return;
 
             // foreach (var sr in dailySRs.Values)
             // {
-            //     Print("Daily SR at bar[" + sr.Index + "]: " + sr.ToString());
+            //     // Print("Daily SR at bar[" + sr.Index + "]: " + sr.ToString());
             // }
             // Run layer logic for Daily and H4
             var (dailyHR, dailyLS, dailyMainIndex) = RunLayer1(dailySRs, dailyBars.Count - 1, lastDailyIndex - LookbackBars * 2 - 1);
             var (h4HR, h4LS, h4MainIndex) = RunLayer1(h4SRs, h4Bars.Count - 1, lastH4Index - LookbackBars * 2 - 1);
-            Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
-            Print("\nh4MainIndex: " + h4MainIndex.ToString());
+            var (h1HR, h1LS, h1MainIndex) = RunLayer1(h1SRs, h1Bars.Count - 1, lastH1Index - LookbackBars * 2 - 1);
+            var (m30HR, m30LS, m30MainIndex) = RunLayer1(m30SRs, m30Bars.Count - 1, lastM30Index - LookbackBars * 2 - 1);
+            // Print("\ndailyMainIndex: " + dailyMainIndex.ToString());
+            // Print("\nh4MainIndex: " + h4MainIndex.ToString());
             // Print("\nD_S reverted: " + (dailyLS != null ? dailyLS.RevertTo(dailyMainIndex-1, dailyBars.Count - 1).ToString() : "null"));
 
             // Log selected SR levels
-            bool temp = true;
-            if (temp && dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
-            if (temp && dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
-            if (temp && h4HR != null) Print("H4 HR: " + h4HR.ToString());
-            if (temp && h4LS != null) Print("H4 LS: " + h4LS.ToString());
+            // bool temp = true;
+            // if (temp && dailyHR != null) Print("Daily HR: " + dailyHR.ToString());
+            // if (temp && dailyLS != null) Print("Daily LS: " + dailyLS.ToString());
+            // if (temp && h4HR != null) Print("H4 HR: " + h4HR.ToString());
+            // if (temp && h4LS != null) Print("H4 LS: " + h4LS.ToString());
 
             // Draw levels for Daily and H4
-            DrawSRLevels(dailyHR, dailyLS, "D", DailySupportColor, DailyResistanceColor, index, dailyMainIndex, new DateTime(), new DateTime(), TimeFrame.Daily);
-            DrawSRLevels(h4HR, h4LS, "H4", H4SupportColor, H4ResistanceColor, index, h4MainIndex, new DateTime(), new DateTime(), TimeFrame.Hour4);
+            if (visual) DrawSRLevels(dailyHR, dailyLS, "D", DailySupportColor, DailyResistanceColor, index, dailyMainIndex, new DateTime(), new DateTime(), TimeFrame.Daily);
+            if (visual) DrawSRLevels(h4HR, h4LS, "H4", H4SupportColor, H4ResistanceColor, index, h4MainIndex, new DateTime(), new DateTime(), TimeFrame.Hour4);
+            if (visual) DrawSRLevels(h1HR, h1LS, "H1", H1SupportColor, H1ResistanceColor, index, h1MainIndex, new DateTime(), new DateTime(), TimeFrame.Hour);
+            if (visual) DrawSRLevels(m30HR, m30LS, "M30", M30SupportColor, M30ResistanceColor, index, m30MainIndex, new DateTime(), new DateTime(), TimeFrame.Minute30);
 
             // Run D-H4 Layer 2
             SR h4BoS;
@@ -378,7 +476,7 @@ namespace cAlgo
             DateTime timeH4BoS;
             DateTime timeH4BoR;
             (h4BoS, h4BoR, timeH4BoS, timeH4BoR, dSignal) = RunLayer2("D", "H4", dailyHR, dailyLS, dailyMainIndex, dailyBars, h4Bars, h4SRs, dSignal);
-            DrawSRLevels(h4BoR, h4BoS, "H4_BO", H4SupportBoColor, H4ResistanceBoColor, index, 0, timeH4BoS, timeH4BoR, TimeFrame.Hour4);
+            if (visual) DrawSRLevels(h4BoR, h4BoS, "H4_BO", H4SupportBoColor, H4ResistanceBoColor, index, 0, timeH4BoS, timeH4BoR, TimeFrame.Hour4);
 
             // Run H4-H1 Layer 2
             SR h1BoS;
@@ -386,13 +484,29 @@ namespace cAlgo
             DateTime timeH1BoS;
             DateTime timeH1BoR;
             (h1BoS, h1BoR, timeH1BoS, timeH1BoR, h4Signal) = RunLayer2("H4", "H1", h4HR, h4LS, h4MainIndex, h4Bars, h1Bars, h1SRs, h4Signal);
-            DrawSRLevels(h1BoR, h1BoS, "H1_BO", H1SupportBoColor, H1ResistanceBoColor, index, 0, timeH1BoS, timeH1BoR, TimeFrame.Hour);
+            if (visual) DrawSRLevels(h1BoR, h1BoS, "H1_BO", H1SupportBoColor, H1ResistanceBoColor, index, 0, timeH1BoS, timeH1BoR, TimeFrame.Hour);
+
+            // Run H1-M30 Layer 2
+            SR m30BoS;
+            SR m30BoR;
+            DateTime timeM30BoS;
+            DateTime timeM30BoR;
+            (m30BoS, m30BoR, timeM30BoS, timeM30BoR, h1Signal) = RunLayer2("H1", "M30", h1HR, h1LS, h1MainIndex, h1Bars, m30Bars, m30SRs, h1Signal);
+            if (visual) DrawSRLevels(m30BoR, m30BoS, "M30_BO", M30SupportBoColor, M30ResistanceBoColor, index, 0, timeM30BoS, timeM30BoR, TimeFrame.Minute30);
+
+            // Run M30-M15 Layer 2
+            SR m15BoS;
+            SR m15BoR;
+            DateTime timeM15BoS;
+            DateTime timeM15BoR;
+            (m15BoS, m15BoR, timeM15BoS, timeM15BoR, m30Signal) = RunLayer2("M30", "M15", m30HR, m30LS, m30MainIndex, m30Bars, m15Bars, m15SRs, m30Signal);
+            if (visual) DrawSRLevels(m15BoR, m15BoS, "M15_BO", M15SupportBoColor, M15ResistanceBoColor, index, 0, timeM15BoS, timeM15BoR, TimeFrame.Minute15);
             
             // Log BO levels
-            if (temp && h4BoS != null) Print("H4 BO_S at " + timeH4BoS + ": " + h4BoS.ToString());
-            if (temp && h4BoR != null) Print("H4 BO_R at " + timeH4BoR + ": " + h4BoR.ToString());
-            if (temp && h1BoS != null) Print("H1 BO_S at " + timeH1BoS + ": " + h1BoS.ToString());
-            if (temp && h1BoR != null) Print("H1 BO_R at " + timeH1BoR + ": " + h1BoR.ToString());
+            // if (temp && h4BoS != null) Print("H4 BO_S at " + timeH4BoS + ": " + h4BoS.ToString());
+            // if (temp && h4BoR != null) Print("H4 BO_R at " + timeH4BoR + ": " + h4BoR.ToString());
+            // if (temp && h1BoS != null) Print("H1 BO_S at " + timeH1BoS + ": " + h1BoS.ToString());
+            // if (temp && h1BoR != null) Print("H1 BO_R at " + timeH1BoR + ": " + h1BoR.ToString());
             string dSignalText;
             switch (dSignal)
             {
@@ -437,11 +551,59 @@ namespace cAlgo
                     h4SignalText = "Error";
                     break;
             }
-            Chart.DrawStaticText("D Signal", "D Signal: " + dSignalText, VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 1 ? Color.Lime : (dSignal == -1 ? Color.Red : Color.White));
-            Chart.DrawStaticText("H4 Signal", "\nH4 Signal: " + h4SignalText, VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 1 ? Color.Lime : (h4Signal == -1 ? Color.Red : Color.White));
-            Print("D Signal: " + dSignal.ToString() + ", H4 Signal: " + h4Signal.ToString());
+            string h1SignalText;
+            switch (h1Signal)
+            {
+                case 1:
+                    h1SignalText = "Bullish";
+                    break;
+                case -1:
+                    h1SignalText = "Bearish";
+                    break;
+                case 0:
+                    h1SignalText = "No Signal"; // (no BO lines)";
+                    break;
+                case 2:
+                    h1SignalText = "No Signal"; // (BO in progress)";
+                    break;
+                case 3:
+                    h1SignalText = "No Signal"; // (1 Bar 2 BO)";
+                    break;
+                default:
+                    h1SignalText = "Error";
+                    break;
+            }
+            string m30SignalText;
+            switch (m30Signal)
+            {
+                case 1:
+                    m30SignalText = "Bullish";
+                    break;
+                case -1:
+                    m30SignalText = "Bearish";
+                    break;
+                case 0:
+                    m30SignalText = "No Signal"; // (no BO lines)";
+                    break;
+                case 2:
+                    m30SignalText = "No Signal"; // (BO in progress)";
+                    break;
+                case 3:
+                    m30SignalText = "No Signal"; // (1 Bar 2 BO)";
+                    break;
+                default:
+                    m30SignalText = "Error";
+                    break;
+            }
+            if (visual) Chart.DrawStaticText("D Signal", "D Signal: " + dSignalText, VerticalAlignment.Top, HorizontalAlignment.Right, dSignal == 1 ? Color.Lime : (dSignal == -1 ? Color.Red : Color.White));
+            if (visual) Chart.DrawStaticText("H4 Signal", "\nH4 Signal: " + h4SignalText, VerticalAlignment.Top, HorizontalAlignment.Right, h4Signal == 1 ? Color.Lime : (h4Signal == -1 ? Color.Red : Color.White));
+            if (visual) Chart.DrawStaticText("H1 Signal", "\n\nH1 Signal: " + h1SignalText, VerticalAlignment.Top, HorizontalAlignment.Right, h1Signal == 1 ? Color.Lime : (h1Signal == -1 ? Color.Red : Color.White));
+            if (visual) Chart.DrawStaticText("M30 Signal", "\n\n\nM30 Signal: " + m30SignalText, VerticalAlignment.Top, HorizontalAlignment.Right, m30Signal == 1 ? Color.Lime : (m30Signal == -1 ? Color.Red : Color.White));
+            // Print("D Signal: " + dSignal.ToString() + ", H4 Signal: " + h4Signal.ToString());
             _dSignal[0] = dSignal == 1 ? 1 : dSignal == -1 ? -1 : 0;
             _h4Signal[0] = h4Signal == 1 ? 1 : h4Signal == -1 ? -1 : 0;
+            _h1Signal[0] = h1Signal == 1 ? 1 : h1Signal == -1 ? -1 : 0;
+            _m30Signal[0] = m30Signal == 1 ? 1 : m30Signal == -1 ? -1 : 0;
         }
 
         public static bool IsBearish(double open, double close)
@@ -763,10 +925,10 @@ namespace cAlgo
             DateTime startTime = htfBar.OpenTime;
             DateTime endTime = (mainIndex + 1 < htfBars.Count) ? htfBars[mainIndex + 1].OpenTime : Server.Time;
 
-            Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
-            Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
-            if (ls != null) Print(htf + "_ls price: " + ls.Price);
-            if (hr != null) Print(htf + "_hr price: " + hr.Price);
+            // Print("Layer2 " + htf + "-" + ltf + ": " + htf + "MainIndex=" + mainIndex + ", startTime=" + startTime + ", endTime=" + endTime);
+            // Print(htf + " bar: O=" + htfBar.Open + ", H=" + htfBar.High + ", L=" + htfBar.Low + ", C=" + htfBar.Close);
+            // if (ls != null) Print(htf + "_ls price: " + ls.Price);
+            // if (hr != null) Print(htf + "_hr price: " + hr.Price);
 
             int firstLTFForS = -1;
             int firstLTFForR = -1;
@@ -776,22 +938,22 @@ namespace cAlgo
                 var ltfBar = ltfBars[i];
                 if (ltfBar.OpenTime >= startTime && ltfBar.OpenTime < endTime)
                 {
-                    Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
+                    // Print("Checking " + ltf + " bar " + i + " at " + ltfBar.OpenTime + ": O=" + ltfBar.Open + ", H=" + ltfBar.High + ", L=" + ltfBar.Low + ", C=" + ltfBar.Close);
                     // Check for ls (support) - downward wick touch
                     bool touchS = ls != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, ls.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, ls.Price));
-                    if (firstLTFForS == -1) Print("Touch S: " + touchS);
+                    // if (firstLTFForS == -1) Print("Touch S: " + touchS);
                     if (touchS && firstLTFForS == -1)
                     {
                         firstLTFForS = i;
-                        Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
+                        // Print(">>>>>>>>>> First touch S found at " + ltf + " " + i);
                     }
                     // Check for hr (resistance) - upward wick touch
                     bool touchR = hr != null && (IsWickTouched(ltfBar.Open, ltfBar.High, ltfBar.Low, ltfBar.Close, hr.Price) || IsBodyTouched(ltfBar.Open, ltfBar.Close, hr.Price));
-                    if (firstLTFForR == -1) Print("Touch R: " + touchR);
+                    // if (firstLTFForR == -1) Print("Touch R: " + touchR);
                     if (touchR && firstLTFForR == -1)
                     {
                         firstLTFForR = i;
-                        Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
+                        // Print(">>>>>>>>>> First touch R found at " + ltf + " " + i);
                     }
                     // Since we expect up to 6 H4 or 4 H1 candles, we can break early if both are found
                     if (firstLTFForS != -1 && firstLTFForR != -1) break;
@@ -801,11 +963,11 @@ namespace cAlgo
             // Print the first touching indices
             if (firstLTFForS != -1)
             {
-                Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
+                // Print("first " + ltf + " bar for " + htf + "_s: " + firstLTFForS);
             }
             if (firstLTFForR != -1)
             {
-                Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
+                // Print("first " + ltf + " bar for " + htf + "_r: " + firstLTFForR);
             }
 
             // Step 2: find unbroken SR levels (LR & HS) before first touching LTF bar
@@ -820,14 +982,14 @@ namespace cAlgo
                     if (cand.IsResistance && cand.IsClassic && cand.TimeBo.Count == 0)
                     {
                         lr = srs[i];
-                        Print(">>>>>>>>>> New " + ltf + " LR: " + cand.ToString());
+                        // Print(">>>>>>>>>> New " + ltf + " LR: " + cand.ToString());
                         ltfMainIndex = i;
                         break;
                     }
                 }
 
                 // Step 3: Check for BO of LR within this and next HTF bars
-                if (lr != null)
+                if (lr != null) // && !lr.isConfirmed
                 {
                     DateTime startTime2 = (ltfMainIndex + 1 < ltfBars.Count) ? ltfBars[ltfMainIndex + 1].OpenTime : Server.Time;
                     DateTime endTime2 = (mainIndex + 2 < htfBars.Count) ? htfBars[mainIndex + 2].OpenTime : Server.Time;
@@ -840,14 +1002,14 @@ namespace cAlgo
                             if (idx != -1 && lr.TimeBo[idx] >= startTime2 && lr.TimeBo[idx] < endTime2)
                             {
                                 indexBoR = i;
-                                Print(">>>>>>>>>> LR BO found at " + ltf + " bar " + indexBoR + "(" + lr.TimeBo[idx] + ")");
+                                // Print(">>>>>>>>>> LR BO found at " + ltf + " bar " + indexBoR + "(" + lr.TimeBo[idx] + ")");
                             }
                         }
                     }
                     if (indexBoR == -1 && IsWickTouched(ltfBars[^1].Open, ltfBars[^1].High, ltfBars[^1].Low, ltfBars[^1].Close, lr.Price) || IsBodyTouched(ltfBars[^1].Open, ltfBars[^1].Close, lr.Price))
                     {
                         indexBoR = ltfBars.Count - 1;
-                        Print(">>>>>>>>>> LR BO found at last " + ltf + " bar (UNCONFIRMED)");
+                        // Print(">>>>>>>>>> LR BO found at last " + ltf + " bar (UNCONFIRMED)");
                     }
                 }
             }
@@ -862,14 +1024,14 @@ namespace cAlgo
                     if (cand.IsSupport && cand.IsClassic && cand.TimeBo.Count == 0)
                     {
                         hs = srs[i];
-                        Print(">>>>>>>>>> New " + ltf + " HS: " + cand.ToString());
+                        // Print(">>>>>>>>>> New " + ltf + " HS: " + cand.ToString());
                         ltfMainIndex = i;
                         break;
                     }
                 }
 
                 // Step 3: Check for BO of HS within this and next HTF bars
-                if (hs != null)
+                if (hs != null) // && !hs.isConfirmed
                 {
                     DateTime startTime2 = (ltfMainIndex + 1 < ltfBars.Count) ? ltfBars[ltfMainIndex + 1].OpenTime : Server.Time;
                     DateTime endTime2 = (mainIndex + 2 < htfBars.Count) ? htfBars[mainIndex + 2].OpenTime : Server.Time;
@@ -881,14 +1043,14 @@ namespace cAlgo
                             if (idx != -1 && hs.TimeBo[idx] >= startTime2 && hs.TimeBo[idx] < endTime2)
                             {
                                 indexBoS = i;
-                                Print(">>>>>>>>>> HS BO found at " + ltf + " bar " + indexBoS + "(" + hs.TimeBo[idx] + ")");
+                                // Print(">>>>>>>>>> HS BO found at " + ltf + " bar " + indexBoS + "(" + hs.TimeBo[idx] + ")");
                             }
                         }
                     }
                     if (indexBoS == -1 && IsWickTouched(ltfBars[^1].Open, ltfBars[^1].High, ltfBars[^1].Low, ltfBars[^1].Close, hs.Price) || IsBodyTouched(ltfBars[^1].Open, ltfBars[^1].Close, hs.Price))
                     {
                         indexBoS = ltfBars.Count - 1;
-                        Print(">>>>>>>>>> HS BO found at last " + ltf + " bar (UNCONFIRMED)");
+                        // Print(">>>>>>>>>> HS BO found at last " + ltf + " bar (UNCONFIRMED)");
                     }
                 }
             }
@@ -897,10 +1059,10 @@ namespace cAlgo
             DateTime timeBoS = new DateTime();
             if (indexBoR != -1) timeBoR = ltfBars[indexBoR].OpenTime;
             if (indexBoS != -1) timeBoS = ltfBars[indexBoS].OpenTime;
-            Print("\nHS: " + (hs != null ? hs.ToString() : "null") + "\nLR: " + (lr != null ? lr.ToString() : "null") + "\ntimeBoS: " + timeBoS.ToString("yyyy-MM-dd HH:mm:ss") + "\ntimeBoR: " + timeBoR.ToString("yyyy-MM-dd HH:mm:ss") + "\nprevSignal: " + prevSignal.ToString());
+            // Print("\nHS: " + (hs != null ? hs.ToString() : "null") + "\nLR: " + (lr != null ? lr.ToString() : "null") + "\ntimeBoS: " + timeBoS.ToString("yyyy-MM-dd HH:mm:ss") + "\ntimeBoR: " + timeBoR.ToString("yyyy-MM-dd HH:mm:ss") + "\nprevSignal: " + prevSignal.ToString());
             // Step 4: Determine signal
             if (indexBoS == -1 && indexBoR == -1) return (hs, lr, timeBoS, timeBoR, prevSignal); // no signal case 1: no BO lines
-            if (indexBoS == ltfBars.Count - 1 || indexBoR == ltfBars.Count - 1) return (hs, lr, timeBoS, timeBoR, 2); // no signal case 2: in progress BO
+            if ((indexBoS == ltfBars.Count - 1 && prevSignal == 1) || (indexBoR == ltfBars.Count - 1 && prevSignal == -1)) return (hs, lr, timeBoS, timeBoR, 2); // no signal case 2: in progress BO
             if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS == indexBoR) return (null, null, new DateTime(), new DateTime(), 3); // no signal case 3: one bar two BOs
             if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS < indexBoR) return (null, lr, new DateTime(), timeBoR, 1); // bullish signal
             if (Math.Max(indexBoS, indexBoR) > 0 && indexBoS > indexBoR) return (hs, null, timeBoS, new DateTime(), -1); // bearish signal
